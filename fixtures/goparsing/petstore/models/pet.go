@@ -17,7 +17,7 @@ package models
 import (
 	"time"
 
-	"github.com/go-swagger/go-swagger/fixtures/goparsing/petstore/enums"
+	"github.com/go-openapi/codescan/fixtures/goparsing/petstore/enums"
 )
 
 // A Pet is the main product in the store.

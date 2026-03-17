@@ -258,7 +258,8 @@ func TestParseResponses(t *testing.T) {
 
 func TestParseResponses_TransparentAliases(t *testing.T) {
 	sctx, err := newScanCtx(&Options{
-		Packages:           []string{"github.com/go-swagger/go-swagger/fixtures/goparsing/transparentalias"},
+		Packages:           []string{"./goparsing/transparentalias"},
+		WorkDir:            "fixtures",
 		TransparentAliases: true,
 		ScanModels:         true,
 	})
@@ -326,7 +327,8 @@ func TestParseResponses_Issue2011(t *testing.T) {
 
 func TestParseResponses_Issue2145(t *testing.T) {
 	sctx, err := newScanCtx(&Options{
-		Packages: []string{"github.com/go-swagger/go-swagger/fixtures/goparsing/product/..."},
+		Packages: []string{"./goparsing/product/..."},
+		WorkDir:  "fixtures",
 	})
 	require.NoError(t, err)
 	responses := make(map[string]spec.Response)

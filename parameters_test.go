@@ -41,7 +41,7 @@ func TestScanFileParam(t *testing.T) {
 	assert.Len(t, operations, 10)
 
 	of, ok := operations["myOperation"]
-	assert.TrueT(t, ok)
+	require.TrueT(t, ok)
 	assert.Len(t, of.Parameters, 1)
 	fileParam := of.Parameters[0]
 	assert.EqualT(t, "MyFormFile desc.", fileParam.Description)
@@ -50,7 +50,7 @@ func TestScanFileParam(t *testing.T) {
 	assert.FalseT(t, fileParam.Required)
 
 	emb, ok := operations["myOtherOperation"]
-	assert.TrueT(t, ok)
+	require.TrueT(t, ok)
 	assert.Len(t, emb.Parameters, 2)
 	fileParam = emb.Parameters[0]
 	assert.EqualT(t, "MyFormFile desc.", fileParam.Description)
@@ -88,7 +88,7 @@ func TestParamsParser(t *testing.T) {
 
 	assert.Len(t, operations, 10)
 	cr, okParam := operations["yetAnotherOperation"]
-	assert.TrueT(t, okParam)
+	require.TrueT(t, okParam)
 	assert.Len(t, cr.Parameters, 8)
 	for _, param := range cr.Parameters {
 		switch param.Name {
@@ -404,7 +404,8 @@ func TestParamsParser(t *testing.T) {
 
 func TestParamsParser_TransparentAliases(t *testing.T) {
 	sctx, err := newScanCtx(&Options{
-		Packages:           []string{"github.com/go-swagger/go-swagger/fixtures/goparsing/transparentalias"},
+		Packages:           []string{"./goparsing/transparentalias"},
+		WorkDir:            "fixtures",
 		TransparentAliases: true,
 		ScanModels:         true,
 	})

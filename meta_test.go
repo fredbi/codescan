@@ -41,7 +41,7 @@ func TestSetInfoContact(t *testing.T) {
 func TestParseInfo(t *testing.T) {
 	swspec := new(spec.Swagger)
 	parser := newMetaParser(swspec)
-	docFile := "../fixtures/goparsing/classification/doc.go"
+	docFile := "fixtures/goparsing/classification/doc.go"
 	fileSet := token.NewFileSet()
 	fileTree, err := goparser.ParseFile(fileSet, docFile, nil, goparser.ParseComments)
 	if err != nil {
@@ -57,7 +57,7 @@ func TestParseInfo(t *testing.T) {
 func TestParseSwagger(t *testing.T) {
 	swspec := new(spec.Swagger)
 	parser := newMetaParser(swspec)
-	docFile := "../fixtures/goparsing/classification/doc.go"
+	docFile := "fixtures/goparsing/classification/doc.go"
 	fileSet := token.NewFileSet()
 	fileTree, err := goparser.ParseFile(fileSet, docFile, nil, goparser.ParseComments)
 	if err != nil {
@@ -135,7 +135,7 @@ func verifyMeta(t *testing.T, doc *spec.Swagger) {
 func verifyInfo(t *testing.T, info *spec.Info) {
 	t.Helper()
 
-	assert.NotNil(t, info)
+	require.NotNil(t, info)
 	assert.EqualT(t, "0.0.1", info.Version)
 	assert.EqualT(t, "there are no TOS at this moment, use at your own risk we take no responsibility", info.TermsOfService)
 	assert.EqualT(t, "Petstore API.", info.Title)
@@ -158,10 +158,10 @@ that are available to turn go code into a fully compliant swagger 2.0 spec`
 
 func TestMoreParseMeta(t *testing.T) {
 	for _, docFile := range []string{
-		"../fixtures/goparsing/meta/v1/doc.go",
-		"../fixtures/goparsing/meta/v2/doc.go",
-		"../fixtures/goparsing/meta/v3/doc.go",
-		"../fixtures/goparsing/meta/v4/doc.go",
+		"fixtures/goparsing/meta/v1/doc.go",
+		"fixtures/goparsing/meta/v2/doc.go",
+		"fixtures/goparsing/meta/v3/doc.go",
+		"fixtures/goparsing/meta/v4/doc.go",
 	} {
 		swspec := new(spec.Swagger)
 		parser := newMetaParser(swspec)

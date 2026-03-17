@@ -17,7 +17,12 @@ import (
 	"github.com/go-openapi/spec"
 )
 
-const epsilon = 1e-9
+const (
+	epsilon = 1e-9
+
+	// fixturesModule is the module path of the fixtures nested module.
+	fixturesModule = "github.com/go-openapi/codescan/fixtures"
+)
 
 func TestSchemaBuilder_Struct_Tag(t *testing.T) {
 	sctx := loadPetstorePkgsCtx(t)
@@ -292,7 +297,7 @@ func TestSchemaBuilder(t *testing.T) {
 	require.NotNil(t, decl2)
 	require.NoError(t, (&schemaBuilder{decl: decl2, ctx: sctx}).Build(models))
 	msch, ok := models["order"]
-	pn := "github.com/go-swagger/go-swagger/fixtures/goparsing/classification/models"
+	pn := fixturesModule + "/goparsing/classification/models"
 	assert.TrueT(t, ok)
 	assert.Equal(t, pn, msch.Extensions["x-go-package"])
 	assert.Equal(t, "StoreOrder", msch.Extensions["x-go-name"])
@@ -306,7 +311,7 @@ func TestSchemaBuilder_AddExtensions(t *testing.T) {
 	require.NoError(t, (&schemaBuilder{decl: decl, ctx: sctx}).Build(models))
 
 	msch, ok := models["order"]
-	pn := "github.com/go-swagger/go-swagger/fixtures/goparsing/classification/models"
+	pn := fixturesModule + "/goparsing/classification/models"
 	assert.TrueT(t, ok)
 	assert.Equal(t, pn, msch.Extensions["x-go-package"])
 	assert.Equal(t, "StoreOrder", msch.Extensions["x-go-name"])
@@ -824,22 +829,23 @@ func TestAliasedTopLevelModels(t *testing.T) {
 		t.Run("with goparsing/spec", func(t *testing.T) {
 			sctx, err := newScanCtx(&Options{
 				Packages: []string{
-					"github.com/go-swagger/go-swagger/fixtures/goparsing/spec",
+					"./goparsing/spec",
 				},
+				WorkDir:    "fixtures",
 				ScanModels: false,
 				RefAliases: true,
 			})
 			require.NoError(t, err)
 
 			t.Run("should find User definition in source", func(t *testing.T) {
-				_, hasUser := sctx.FindDecl("github.com/go-swagger/go-swagger/fixtures/goparsing/spec", "User")
+				_, hasUser := sctx.FindDecl(fixturesModule+"/goparsing/spec", "User")
 				require.TrueT(t, hasUser)
 			})
 
 			var decl *entityDecl
 			t.Run("should find Customer definition in source", func(t *testing.T) {
 				var hasCustomer bool
-				decl, hasCustomer = sctx.FindDecl("github.com/go-swagger/go-swagger/fixtures/goparsing/spec", "Customer")
+				decl, hasCustomer = sctx.FindDecl(fixturesModule+"/goparsing/spec", "Customer")
 				require.TrueT(t, hasCustomer)
 			})
 
@@ -899,22 +905,23 @@ func TestAliasedTopLevelModels(t *testing.T) {
 		t.Run("with goparsing/spec", func(t *testing.T) {
 			sctx, err := newScanCtx(&Options{
 				Packages: []string{
-					"github.com/go-swagger/go-swagger/fixtures/goparsing/spec",
+					"./goparsing/spec",
 				},
+				WorkDir:    "fixtures",
 				ScanModels: false,
 				RefAliases: false,
 			})
 			require.NoError(t, err)
 
 			t.Run("should find User definition in source", func(t *testing.T) {
-				_, hasUser := sctx.FindDecl("github.com/go-swagger/go-swagger/fixtures/goparsing/spec", "User")
+				_, hasUser := sctx.FindDecl(fixturesModule+"/goparsing/spec", "User")
 				require.TrueT(t, hasUser)
 			})
 
 			var decl *entityDecl
 			t.Run("should find Customer definition in source", func(t *testing.T) {
 				var hasCustomer bool
-				decl, hasCustomer = sctx.FindDecl("github.com/go-swagger/go-swagger/fixtures/goparsing/spec", "Customer")
+				decl, hasCustomer = sctx.FindDecl(fixturesModule+"/goparsing/spec", "Customer")
 				require.TrueT(t, hasCustomer)
 			})
 
@@ -953,7 +960,7 @@ func TestAliasedTopLevelModels(t *testing.T) {
 func TestAliasedSchemas(t *testing.T) {
 	t.Setenv("SWAGGER_GENERATE_EXTENSION", "true")
 
-	fixturesPath := filepath.Join("..", "fixtures", "goparsing", "go123", "aliased", "schema")
+	fixturesPath := filepath.Join("fixtures", "goparsing", "go123", "aliased", "schema")
 	var sp *spec.Swagger
 	t.Run("end-to-end source scan should succeed", func(t *testing.T) {
 		var err error
@@ -1489,7 +1496,7 @@ func TestAliasedSchemas(t *testing.T) {
 func TestSpecialSchemas(t *testing.T) {
 	t.Setenv("SWAGGER_GENERATE_EXTENSION", "true")
 
-	fixturesPath := filepath.Join("..", "fixtures", "goparsing", "go123", "special")
+	fixturesPath := filepath.Join("fixtures", "goparsing", "go123", "special")
 	var sp *spec.Swagger
 
 	t.Run("end-to-end source scan should succeed", func(t *testing.T) {
@@ -1628,7 +1635,7 @@ func TestSpecialSchemas(t *testing.T) {
 				t.Run("a type based on the encoding.TextMarshaler decorated with a x-go-type extension", func(t *testing.T) {
 					val, hasExt := m.Extensions.GetString("x-go-type")
 					assert.TrueT(t, hasExt)
-					assert.EqualT(t, "github.com/go-swagger/go-swagger/fixtures/goparsing/go123/special.IsATextMarshaler", val)
+					assert.EqualT(t, fixturesModule+"/goparsing/go123/special.IsATextMarshaler", val)
 				})
 			})
 
@@ -1950,8 +1957,9 @@ func TestPointersAreNullableByDefaultWhenSetXNullableForPointersIsSet(t *testing
 		assert.MapNotContainsT(t, schema.Properties["Value5"].Extensions, "x-nullable")
 	}
 
-	packagePath := "github.com/go-swagger/go-swagger/fixtures/enhancements/pointers-nullable-by-default"
-	sctx, err := newScanCtx(&Options{Packages: []string{packagePath}, SetXNullableForPointers: true})
+	packagePattern := "./enhancements/pointers-nullable-by-default"
+	packagePath := fixturesModule + "/enhancements/pointers-nullable-by-default"
+	sctx, err := newScanCtx(&Options{Packages: []string{packagePattern}, WorkDir: "fixtures", SetXNullableForPointers: true})
 	require.NoError(t, err)
 
 	assertModel(sctx, packagePath, "Item")
@@ -1985,8 +1993,9 @@ func TestPointersAreNotNullableByDefaultWhenSetXNullableForPointersIsNotSet(t *t
 		assert.MapNotContainsT(t, schema.Properties["Value5"].Extensions, "x-nullable")
 	}
 
-	packagePath := "github.com/go-swagger/go-swagger/fixtures/enhancements/pointers-nullable-by-default"
-	sctx, err := newScanCtx(&Options{Packages: []string{packagePath}})
+	packagePattern := "./enhancements/pointers-nullable-by-default"
+	packagePath := fixturesModule + "/enhancements/pointers-nullable-by-default"
+	sctx, err := newScanCtx(&Options{Packages: []string{packagePattern}, WorkDir: "fixtures"})
 	require.NoError(t, err)
 
 	assertModel(sctx, packagePath, "Item")
@@ -2204,7 +2213,7 @@ func TestAddExtension(t *testing.T) {
 }
 
 func getClassificationModel(sctx *scanCtx, nm string) *entityDecl {
-	decl, ok := sctx.FindDecl("github.com/go-swagger/go-swagger/fixtures/goparsing/classification/models", nm)
+	decl, ok := sctx.FindDecl(fixturesModule+"/goparsing/classification/models", nm)
 	if !ok {
 		return nil
 	}
@@ -2408,9 +2417,11 @@ func marshalToYAMLFormat(swspec any) ([]byte, error) {
 }
 
 func TestEmbeddedDescriptionAndTags(t *testing.T) {
-	packagePath := "github.com/go-swagger/go-swagger/fixtures/bugs/3125/minimal"
+	packagePattern := "./bugs/3125/minimal"
+	packagePath := fixturesModule + "/bugs/3125/minimal"
 	sctx, err := newScanCtx(&Options{
-		Packages:    []string{packagePath},
+		Packages:    []string{packagePattern},
+		WorkDir:     "fixtures",
 		DescWithRef: true,
 	})
 	require.NoError(t, err)
@@ -2488,9 +2499,11 @@ func TestIssue2540(t *testing.T) {
 func testIssue2540(descWithRef bool, expectedJSON string) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Setenv("SWAGGER_GENERATE_EXTENSION", "false")
-		packagePath := "github.com/go-swagger/go-swagger/fixtures/bugs/2540/foo"
+		packagePattern := "./bugs/2540/foo"
+		packagePath := fixturesModule + "/bugs/2540/foo"
 		sctx, err := newScanCtx(&Options{
-			Packages:    []string{packagePath},
+			Packages:    []string{packagePattern},
+			WorkDir:     "fixtures",
 			DescWithRef: descWithRef,
 		})
 		require.NoError(t, err)

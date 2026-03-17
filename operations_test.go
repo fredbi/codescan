@@ -21,11 +21,12 @@ func TestOperationsExpression(t *testing.T) {
 func TestOperationsParser(t *testing.T) {
 	sctx, err := newScanCtx(&Options{
 		Packages: []string{
-			"github.com/go-swagger/go-swagger/fixtures/goparsing/classification",
-			"github.com/go-swagger/go-swagger/fixtures/goparsing/classification/models",
-			"github.com/go-swagger/go-swagger/fixtures/goparsing/classification/operations",
-			"github.com/go-swagger/go-swagger/fixtures/goparsing/classification/operations_annotation",
+			"./goparsing/classification",
+			"./goparsing/classification/models",
+			"./goparsing/classification/operations",
+			"./goparsing/classification/operations_annotation",
 		},
+		WorkDir: "fixtures",
 	})
 	require.NoError(t, err)
 	var ops spec.Paths
@@ -42,7 +43,7 @@ func TestOperationsParser(t *testing.T) {
 
 	po, ok := ops.Paths["/pets"]
 	assert.TrueT(t, ok)
-	assert.NotNil(t, po.Get)
+	require.NotNil(t, po.Get)
 	assertAnnotationOperation(t,
 		po.Get,
 		"getPet",
