@@ -1,2 +1,3 @@
 # codescan
-Tools to generate an OAI spec from go source
+
+Version of the go source parser with support for go modules, from go1.11 onwards.
