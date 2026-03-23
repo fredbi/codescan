@@ -15,6 +15,7 @@ type responseTypable struct {
 	in       string
 	header   *spec.Header
 	response *spec.Response
+	skipExt  bool
 }
 
 func (ht responseTypable) In() string { return ht.in }
@@ -25,7 +26,7 @@ func (ht responseTypable) Typed(tpe, format string) {
 	ht.header.Typed(tpe, format)
 }
 
-func bodyTypable(in string, schema *spec.Schema) (swaggerTypable, *spec.Schema) { //nolint:ireturn // polymorphic by design
+func bodyTypable(in string, schema *spec.Schema, skipExt bool) (swaggerTypable, *spec.Schema) { //nolint:ireturn // polymorphic by design
 	if in == bodyTag {
 		// get the schema for items on the schema property
 		if schema == nil {
@@ -38,13 +39,13 @@ func bodyTypable(in string, schema *spec.Schema) (swaggerTypable, *spec.Schema) 
 			schema.Items.Schema = new(spec.Schema)
 		}
 		schema.Typed("array", "")
-		return schemaTypable{schema.Items.Schema, 1}, schema
+		return schemaTypable{schema.Items.Schema, 1, skipExt}, schema
 	}
 	return nil, nil
 }
 
 func (ht responseTypable) Items() swaggerTypable { //nolint:ireturn // polymorphic by design
-	bdt, schema := bodyTypable(ht.in, ht.response.Schema)
+	bdt, schema := bodyTypable(ht.in, ht.response.Schema, ht.skipExt)
 	if bdt != nil {
 		ht.response.Schema = schema
 		return bdt
@@ -157,7 +158,7 @@ func (r *responseBuilder) Build(responses map[string]spec.Response) error {
 
 	name, _ := r.decl.ResponseNames()
 	response := responses[name]
-	debugLogf("building response: %s", name)
+	debugLogf(r.ctx.debug, "building response: %s", name)
 
 	// analyze doc comment for the model
 	sp := new(sectionedParser)
@@ -181,7 +182,7 @@ func (r *responseBuilder) Build(responses map[string]spec.Response) error {
 }
 
 func (r *responseBuilder) buildFromField(fld *types.Var, tpe types.Type, typable swaggerTypable, seen map[string]bool) error {
-	debugLogf("build from field %s: %T", fld.Name(), tpe)
+	debugLogf(r.ctx.debug, "build from field %s: %T", fld.Name(), tpe)
 
 	switch ftpe := tpe.(type) {
 	case *types.Basic:
@@ -201,7 +202,7 @@ func (r *responseBuilder) buildFromField(fld *types.Var, tpe types.Type, typable
 	case *types.Named:
 		return r.buildNamedField(ftpe, typable)
 	case *types.Alias:
-		debugLogf("alias(responses.buildFromField): got alias %v to %v", ftpe, ftpe.Rhs())
+		debugLogf(r.ctx.debug, "alias(responses.buildFromField): got alias %v to %v", ftpe, ftpe.Rhs())
 		return r.buildFieldAlias(ftpe, typable, fld, seen)
 	default:
 		return fmt.Errorf("unknown type for %s: %T: %w", fld.String(), fld.Type(), ErrCodeScan)
@@ -234,7 +235,7 @@ func (r *responseBuilder) buildFromFieldMap(ftpe *types.Map, typable swaggerTypa
 		ctx:  r.ctx,
 	}
 
-	if err := sb.buildFromType(ftpe.Elem(), schemaTypable{schema, typable.Level() + 1}); err != nil {
+	if err := sb.buildFromType(ftpe.Elem(), schemaTypable{schema, typable.Level() + 1, r.ctx.opts.SkipExtensions}); err != nil {
 		return err
 	}
 
@@ -263,7 +264,7 @@ func (r *responseBuilder) buildFromType(otpe types.Type, resp *spec.Response, se
 	case *types.Named:
 		return r.buildNamedType(tpe, resp, seen)
 	case *types.Alias:
-		debugLogf("alias(responses.buildFromType): got alias %v to %v", tpe, tpe.Rhs())
+		debugLogf(r.ctx.debug, "alias(responses.buildFromType): got alias %v to %v", tpe, tpe.Rhs())
 		return r.buildAlias(tpe, resp, seen)
 	default:
 		return fmt.Errorf("anonymous types are currently not supported for responses: %w", ErrCodeScan)
@@ -280,7 +281,7 @@ func (r *responseBuilder) buildNamedType(tpe *types.Named, resp *spec.Response, 
 
 	switch stpe := o.Type().Underlying().(type) { // TODO(fred): this is wrong without checking for aliases?
 	case *types.Struct:
-		debugLogf("build from type %s: %T", o.Name(), tpe)
+		debugLogf(r.ctx.debug, "build from type %s: %T", o.Name(), tpe)
 		if decl, found := r.ctx.DeclForType(o.Type()); found {
 			return r.buildFromStruct(decl, stpe, resp, seen)
 		}
@@ -289,7 +290,7 @@ func (r *responseBuilder) buildNamedType(tpe *types.Named, resp *spec.Response, 
 	default:
 		if decl, found := r.ctx.DeclForType(o.Type()); found {
 			var schema spec.Schema
-			typable := schemaTypable{schema: &schema, level: 0}
+			typable := schemaTypable{schema: &schema, level: 0, skipExt: r.ctx.opts.SkipExtensions}
 
 			d := decl.Obj()
 			if isStdTime(d) {
@@ -350,7 +351,7 @@ func (r *responseBuilder) buildAlias(tpe *types.Alias, resp *spec.Response, seen
 			break // builtin
 		}
 
-		typable := schemaTypable{schema: &spec.Schema{}, level: 0}
+		typable := schemaTypable{schema: &spec.Schema{}, level: 0, skipExt: r.ctx.opts.SkipExtensions}
 		return r.makeRef(decl, typable)
 	case *types.Alias:
 		o := rtpe.Obj()
@@ -358,7 +359,7 @@ func (r *responseBuilder) buildAlias(tpe *types.Alias, resp *spec.Response, seen
 			break // builtin
 		}
 
-		typable := schemaTypable{schema: &spec.Schema{}, level: 0}
+		typable := schemaTypable{schema: &spec.Schema{}, level: 0, skipExt: r.ctx.opts.SkipExtensions}
 
 		return r.makeRef(decl, typable)
 	}
@@ -440,7 +441,7 @@ func (r *responseBuilder) buildFromStruct(decl *entityDecl, tpe *types.Struct, r
 			continue
 		}
 		if fld.Anonymous() {
-			debugLogf("skipping anonymous field")
+			debugLogf(r.ctx.debug, "skipping anonymous field")
 			continue
 		}
 
@@ -464,12 +465,12 @@ func (r *responseBuilder) processResponseField(fld *types.Var, decl *entityDecl,
 
 	afld := findASTField(decl.File, fld.Pos())
 	if afld == nil {
-		debugLogf("can't find source associated with %s", fld.String())
+		debugLogf(r.ctx.debug, "can't find source associated with %s", fld.String())
 		return nil
 	}
 
 	if ignored(afld.Doc) {
-		debugLogf("field %v is deliberately ignored", fld)
+		debugLogf(r.ctx.debug, "field %v is deliberately ignored", fld)
 		return nil
 	}
 
@@ -503,8 +504,8 @@ func (r *responseBuilder) processResponseField(fld *types.Var, decl *entityDecl,
 		resp.Schema = &spec.Schema{}
 		resp.Schema.Typed("file", "")
 	} else {
-		debugLogf("build response %v (%v) (not a file)", fld, fld.Type())
-		if err := r.buildFromField(fld, fld.Type(), responseTypable{in, &ps, resp}, seen); err != nil {
+		debugLogf(r.ctx.debug, "build response %v (%v) (not a file)", fld, fld.Type())
+		if err := r.buildFromField(fld, fld.Type(), responseTypable{in, &ps, resp, r.ctx.opts.SkipExtensions}, seen); err != nil {
 			return err
 		}
 	}
