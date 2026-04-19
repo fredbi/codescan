@@ -83,6 +83,8 @@ func TestScanFileParam(t *testing.T) {
 	assert.EqualT(t, "formData", fileParam.In)
 	assert.EqualT(t, "file", fileParam.Type)
 	assert.FalseT(t, fileParam.Required)
+
+	compareOrDumpJSON(t, operations, "classification_params_file.json")
 }
 
 func TestParamsParser(t *testing.T) {
@@ -138,6 +140,8 @@ func TestParamsParser(t *testing.T) {
 	t.Run("someAliasOperation", func(t *testing.T) {
 		assertSomeAliasOperationParams(t, operations)
 	})
+
+	compareOrDumpJSON(t, operations, "classification_params.json")
 }
 
 func assertYetAnotherOperationParams(t *testing.T, operations map[string]*spec.Operation) {
@@ -523,6 +527,8 @@ func TestParamsParser_TransparentAliases(t *testing.T) {
 	assert.EqualT(t, "aliasQuery", queryParam.Name)
 	assert.EqualT(t, "string", queryParam.Type)
 	assert.Empty(t, queryParam.Ref.String())
+
+	compareOrDumpJSON(t, operations, "transparentalias_params.json")
 }
 
 func TestParameterParser_Issue2007(t *testing.T) {
@@ -545,6 +551,8 @@ func TestParameterParser_Issue2007(t *testing.T) {
 	require.NotNil(t, sch.AdditionalProperties)
 	require.NotNil(t, sch.AdditionalProperties.Schema)
 	require.TrueT(t, sch.AdditionalProperties.Schema.Type.Contains("string"))
+
+	compareOrDumpJSON(t, operations, "classification_params_issue2007.json")
 }
 
 func TestParameterParser_Issue2011(t *testing.T) {
@@ -562,4 +570,6 @@ func TestParameterParser_Issue2011(t *testing.T) {
 	require.Len(t, op.Parameters, 1)
 	sch := op.Parameters[0].Schema
 	require.NotNil(t, sch)
+
+	compareOrDumpJSON(t, operations, "classification_params_issue2011.json")
 }

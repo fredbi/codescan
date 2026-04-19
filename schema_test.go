@@ -64,6 +64,8 @@ func TestSchemaBuilder_Struct_Tag(t *testing.T) {
 	}
 	result := make(map[string]spec.Schema)
 	require.NoError(t, prs.Build(result))
+
+	compareOrDumpJSON(t, result, "petstore_schema_Tag.json")
 }
 
 func TestSchemaBuilder_Struct_Pet(t *testing.T) {
@@ -87,6 +89,8 @@ func TestSchemaBuilder_Struct_Pet(t *testing.T) {
 	}
 	result := make(map[string]spec.Schema)
 	require.NoError(t, prs.Build(result))
+
+	compareOrDumpJSON(t, result, "petstore_schema_Pet.json")
 }
 
 func TestSchemaBuilder_Struct_Order(t *testing.T) {
@@ -110,6 +114,8 @@ func TestSchemaBuilder_Struct_Order(t *testing.T) {
 	}
 	result := make(map[string]spec.Schema)
 	require.NoError(t, prs.Build(result))
+
+	compareOrDumpJSON(t, result, "petstore_schema_Order.json")
 }
 
 func TestSchemaBuilder(t *testing.T) {
@@ -325,6 +331,8 @@ func TestSchemaBuilder(t *testing.T) {
 	assert.TrueT(t, ok)
 	assert.Equal(t, pn, msch.Extensions["x-go-package"])
 	assert.Equal(t, "StoreOrder", msch.Extensions["x-go-name"])
+
+	compareOrDumpJSON(t, models, "classification_schema_NoModel.json")
 }
 
 func TestSchemaBuilder_AddExtensions(t *testing.T) {
@@ -1502,6 +1510,8 @@ func testAliasedEmbeddedTypes(t *testing.T, sp *spec.Swagger) {
 		require.TrueT(t, foundUUID)
 		require.TrueT(t, foundProps)
 	})
+
+	compareOrDumpJSON(t, sp, "go123_aliased_spec.json")
 }
 
 func TestSpecialSchemas(t *testing.T) {
@@ -1934,6 +1944,8 @@ func testSpecialTypesWhatNot(t *testing.T, sp *spec.Swagger, props map[string]sp
 			})
 		})
 	})
+
+	compareOrDumpJSON(t, sp, "go123_special_spec.json")
 }
 
 func TestEmbeddedAllOf(t *testing.T) {
@@ -1961,9 +1973,12 @@ func TestEmbeddedAllOf(t *testing.T) {
 	assertProperty(t, &asch, "string", "createdAt", "date-time", "CreatedAt")
 	assertProperty(t, &asch, "integer", "did", "int64", "DID")
 	assertProperty(t, &asch, "string", "cat", "", "Cat")
+
+	compareOrDumpJSON(t, models, "classification_schema_AllOfModel.json")
 }
 
 func TestPointersAreNullableByDefaultWhenSetXNullableForPointersIsSet(t *testing.T) {
+	allModels := make(map[string]spec.Schema)
 	assertModel := func(sctx *scanCtx, packagePath, modelName string) {
 		decl, _ := sctx.FindDecl(packagePath, modelName)
 		require.NotNil(t, decl)
@@ -1971,10 +1986,9 @@ func TestPointersAreNullableByDefaultWhenSetXNullableForPointersIsSet(t *testing
 			ctx:  sctx,
 			decl: decl,
 		}
-		models := make(map[string]spec.Schema)
-		require.NoError(t, prs.Build(models))
+		require.NoError(t, prs.Build(allModels))
 
-		schema := models[modelName]
+		schema := allModels[modelName]
 		require.Len(t, schema.Properties, 5)
 
 		require.MapContainsT(t, schema.Properties, "Value1")
@@ -1997,9 +2011,12 @@ func TestPointersAreNullableByDefaultWhenSetXNullableForPointersIsSet(t *testing
 
 	assertModel(sctx, packagePath, "Item")
 	assertModel(sctx, packagePath, "ItemInterface")
+
+	compareOrDumpJSON(t, allModels, "enhancements_pointers_xnullable.json")
 }
 
 func TestPointersAreNotNullableByDefaultWhenSetXNullableForPointersIsNotSet(t *testing.T) {
+	allModels := make(map[string]spec.Schema)
 	assertModel := func(sctx *scanCtx, packagePath, modelName string) {
 		decl, _ := sctx.FindDecl(packagePath, modelName)
 		require.NotNil(t, decl)
@@ -2007,10 +2024,9 @@ func TestPointersAreNotNullableByDefaultWhenSetXNullableForPointersIsNotSet(t *t
 			ctx:  sctx,
 			decl: decl,
 		}
-		models := make(map[string]spec.Schema)
-		require.NoError(t, prs.Build(models))
+		require.NoError(t, prs.Build(allModels))
 
-		schema := models[modelName]
+		schema := allModels[modelName]
 		require.Len(t, schema.Properties, 5)
 
 		require.MapContainsT(t, schema.Properties, "Value1")
@@ -2033,6 +2049,8 @@ func TestPointersAreNotNullableByDefaultWhenSetXNullableForPointersIsNotSet(t *t
 
 	assertModel(sctx, packagePath, "Item")
 	assertModel(sctx, packagePath, "ItemInterface")
+
+	compareOrDumpJSON(t, allModels, "enhancements_pointers_no_xnullable.json")
 }
 
 func TestSwaggerTypeNamed(t *testing.T) {
@@ -2048,6 +2066,8 @@ func TestSwaggerTypeNamed(t *testing.T) {
 	schema := models["namedWithType"]
 
 	assertProperty(t, &schema, "object", "some_map", "", "SomeMap")
+
+	compareOrDumpJSON(t, models, "classification_schema_NamedWithType.json")
 }
 
 func TestSwaggerTypeNamedWithGenerics(t *testing.T) {
@@ -2110,6 +2130,8 @@ func TestSwaggerTypeStruct(t *testing.T) {
 	schema := models["NullString"]
 
 	assert.TrueT(t, schema.Type.Contains("string"))
+
+	compareOrDumpJSON(t, models, "classification_schema_NullString.json")
 }
 
 func TestStructDiscriminators(t *testing.T) {
@@ -2149,6 +2171,8 @@ func TestStructDiscriminators(t *testing.T) {
 
 	// b, _ := json.MarshalIndent(sch, "", "  ")
 	// fmt.Println(string(b))
+
+	compareOrDumpJSON(t, models, "classification_schema_struct_discriminators.json")
 }
 
 func TestInterfaceDiscriminators(t *testing.T) {
@@ -2216,6 +2240,8 @@ func TestInterfaceDiscriminators(t *testing.T) {
 
 		assertProperty(t, &schema, "integer", "doors", "int64", "Doors")
 	}
+
+	compareOrDumpJSON(t, models, "classification_schema_interface_discriminators.json")
 }
 
 func TestAddExtension(t *testing.T) {
@@ -2473,6 +2499,8 @@ func TestEmbeddedDescriptionAndTags(t *testing.T) {
 	assert.EqualT(t, "Non-nullable value", schema.Properties["value2"].Description)
 	assert.MapNotContainsT(t, schema.Properties["value2"].Extensions, "x-nullable")
 	assert.Equal(t, `{"value": 42}`, schema.Properties["value2"].Example)
+
+	compareOrDumpJSON(t, models, "bugs_3125_schema.json")
 }
 
 func TestIssue2540(t *testing.T) {

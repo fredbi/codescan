@@ -64,6 +64,8 @@ func TestParseResponses(t *testing.T) {
 	assert.TrueT(t, ok)
 	assert.NotNil(t, res.Schema)
 	assert.EqualT(t, "#/definitions/user", res.Schema.Ref.String())
+
+	compareOrDumpJSON(t, responses, "classification_responses.json")
 }
 
 func assertComplexerOneHeaders(t *testing.T, responses map[string]spec.Response) {
@@ -317,6 +319,8 @@ func TestParseResponses_TransparentAliases(t *testing.T) {
 	assert.TrueT(t, payload.Type.Contains("object"))
 	assert.Empty(t, payload.Ref.String())
 	assert.Equal(t, "Payload", payload.Extensions["x-go-name"])
+
+	compareOrDumpJSON(t, responses, "transparentalias_responses.json")
 }
 
 func TestParseResponses_Issue2007(t *testing.T) {
@@ -337,6 +341,8 @@ func TestParseResponses_Issue2007(t *testing.T) {
 	require.NotNil(t, resp.Schema.AdditionalProperties)
 	require.NotNil(t, resp.Schema.AdditionalProperties.Schema)
 	require.TrueT(t, resp.Schema.AdditionalProperties.Schema.Type.Contains("string"))
+
+	compareOrDumpJSON(t, responses, "classification_responses_issue2007.json")
 }
 
 func TestParseResponses_Issue2011(t *testing.T) {
@@ -352,6 +358,8 @@ func TestParseResponses_Issue2011(t *testing.T) {
 	resp := responses["NumPlatesResp"]
 	require.Empty(t, resp.Headers)
 	require.NotNil(t, resp.Schema)
+
+	compareOrDumpJSON(t, responses, "classification_responses_issue2011.json")
 }
 
 func TestParseResponses_Issue2145(t *testing.T) {
@@ -372,4 +380,6 @@ func TestParseResponses_Issue2145(t *testing.T) {
 	require.NotNil(t, resp.Schema)
 
 	assert.NotEmpty(t, prs.postDecls) // should have Product
+
+	compareOrDumpJSON(t, responses, "product_responses.json")
 }

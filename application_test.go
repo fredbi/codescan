@@ -88,6 +88,8 @@ func TestAppScanner_NewSpec(t *testing.T) {
 	require.NotNil(t, doc)
 
 	verifyParsedPetStore(t, doc)
+
+	compareOrDumpJSON(t, doc, "petstore_spec.json")
 }
 
 func TestAppScanner_Definitions(t *testing.T) {
@@ -109,6 +111,8 @@ func TestAppScanner_Definitions(t *testing.T) {
 		_, ok = doc.Definitions["IgnoreMe"]
 		assert.FalseT(t, ok, "Should not include un-annotated/un-referenced structs")
 	}
+
+	compareOrDumpJSON(t, doc, "bookings_spec.json")
 }
 
 func loadPetstorePkgsCtx(t *testing.T) *scanCtx {

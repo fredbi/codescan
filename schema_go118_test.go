@@ -54,6 +54,8 @@ func TestGo118SwaggerTypeNamed(t *testing.T) {
 	schema := models["namedWithType"]
 
 	assertProperty(t, &schema, "object", "some_map", "", "SomeMap")
+
+	compareOrDumpJSON(t, models, "go118_schema_NamedWithType.json")
 }
 
 func TestGo118AliasedModels(t *testing.T) {
@@ -87,6 +89,8 @@ func TestGo118AliasedModels(t *testing.T) {
 		// map types
 		assertMapDefinition(t, defs, "SomeObject", "object", "", "")
 	}
+
+	compareOrDumpJSON(t, defs, "go118_schema_aliased.json")
 }
 
 func TestGo118InterfaceField(t *testing.T) {
@@ -102,6 +106,8 @@ func TestGo118InterfaceField(t *testing.T) {
 
 	schema := models["Interfaced"]
 	assertProperty(t, &schema, "", "custom_data", "", "CustomData")
+
+	compareOrDumpJSON(t, models, "go118_schema_Interfaced.json")
 }
 
 func TestGo118ParameterParser_Issue2011(t *testing.T) {
@@ -119,6 +125,8 @@ func TestGo118ParameterParser_Issue2011(t *testing.T) {
 	require.Len(t, op.Parameters, 1)
 	sch := op.Parameters[0].Schema
 	require.NotNil(t, sch)
+
+	compareOrDumpJSON(t, operations, "go118_params_issue2011.json")
 }
 
 func TestGo118ParseResponses_Issue2011(t *testing.T) {
@@ -134,6 +142,8 @@ func TestGo118ParseResponses_Issue2011(t *testing.T) {
 	resp := responses["NumPlatesResp"]
 	require.Empty(t, resp.Headers)
 	require.NotNil(t, resp.Schema)
+
+	compareOrDumpJSON(t, responses, "go118_responses_issue2011.json")
 }
 
 func TestGo118_Issue2809(t *testing.T) {
@@ -149,4 +159,6 @@ func TestGo118_Issue2809(t *testing.T) {
 
 	schema := models["transportErr"]
 	assertProperty(t, &schema, "", "data", "", "Data")
+
+	compareOrDumpJSON(t, models, "go118_schema_transportErr.json")
 }
