@@ -228,6 +228,24 @@ func (s *Builder) buildFromTextMarshal(tpe types.Type, tgt ifaces.SwaggerTypable
 	return nil
 }
 
+// hasNamedCore reports whether tpe is a *types.Named, or resolves to one
+// by peeling one or more pointer layers. Used to gate content-based
+// shortcuts (like the TextMarshaler check) to types whose name can be
+// inspected — anonymous structural kinds cannot yield meaningful output
+// from those shortcuts and should take the structural dispatch instead.
+func hasNamedCore(tpe types.Type) bool {
+	for {
+		switch t := tpe.(type) {
+		case *types.Named:
+			return true
+		case *types.Pointer:
+			tpe = t.Elem()
+		default:
+			return false
+		}
+	}
+}
+
 func (s *Builder) buildFromType(tpe types.Type, tgt ifaces.SwaggerTypable) error {
 	logger.DebugLogf(s.ctx.Debug(), "schema buildFromType %v (%T)", tpe, tpe)
 
@@ -243,7 +261,14 @@ func (s *Builder) buildFromType(tpe types.Type, tgt ifaces.SwaggerTypable) error
 		return s.buildAlias(titpe, tgt)
 	}
 
-	if resolvers.IsTextMarshaler(tpe) {
+	// Only shortcut to the TextMarshaler renderer when we can reach a
+	// *types.Named by peeling pointers — buildFromTextMarshal uses the
+	// name to map to known formats (time/uuid/json.RawMessage/strfmt) and
+	// falls back to {string, ""} otherwise. An anonymous struct that only
+	// satisfies TextMarshaler by embedding time.Time (method promotion)
+	// would otherwise be flattened to {string}, erasing its body and any
+	// allOf composition. See Q4 in .claude/plans/observed-quirks.md.
+	if hasNamedCore(tpe) && resolvers.IsTextMarshaler(tpe) {
 		return s.buildFromTextMarshal(tpe, tgt)
 	}
 
