@@ -168,6 +168,14 @@ func (s *Builder) buildFromTextMarshal(tpe types.Type, tgt ifaces.SwaggerTypable
 		return s.buildFromTextMarshal(typePtr.Elem(), tgt)
 	}
 
+	// An alias surfaced under a pointer (e.g. *Timestamp where
+	// Timestamp = time.Time) — route through buildAlias so the alias
+	// indirection is honored per RefAliases/TransparentAliases, same as
+	// the non-pointer path in buildFromType.
+	if typeAlias, ok := tpe.(*types.Alias); ok {
+		return s.buildAlias(typeAlias, tgt)
+	}
+
 	typeNamed, ok := tpe.(*types.Named)
 	if !ok {
 		tgt.Typed("string", "")
@@ -221,9 +229,19 @@ func (s *Builder) buildFromTextMarshal(tpe types.Type, tgt ifaces.SwaggerTypable
 }
 
 func (s *Builder) buildFromType(tpe types.Type, tgt ifaces.SwaggerTypable) error {
-	// check if the type implements encoding.TextMarshaler interface
-	// if so, the type is rendered as a string.
 	logger.DebugLogf(s.ctx.Debug(), "schema buildFromType %v (%T)", tpe, tpe)
+
+	// Aliases are dispatched first, before any content-based shortcut,
+	// so the alias indirection is honored consistently with the caller's
+	// RefAliases/TransparentAliases intent. Without this, a text-
+	// marshalable alias (e.g. `type Timestamp = time.Time`) would be
+	// inlined as a plain string — losing both the alias semantics and
+	// (because buildFromTextMarshal only unwraps pointers) the target's
+	// format.
+	if titpe, ok := tpe.(*types.Alias); ok {
+		logger.DebugLogf(s.ctx.Debug(), "alias(schema.buildFromType): got alias %v to %v", titpe, titpe.Rhs())
+		return s.buildAlias(titpe, tgt)
+	}
 
 	if resolvers.IsTextMarshaler(tpe) {
 		return s.buildFromTextMarshal(tpe, tgt)
@@ -253,10 +271,6 @@ func (s *Builder) buildFromType(tpe types.Type, tgt ifaces.SwaggerTypable) error
 	case *types.Named:
 		// a named type, e.g. type X struct {}
 		return s.buildNamedType(titpe, tgt)
-	case *types.Alias:
-		// a named alias, e.g. type X = {RHS type}.
-		logger.DebugLogf(s.ctx.Debug(), "alias(schema.buildFromType): got alias %v to %v", titpe, titpe.Rhs())
-		return s.buildAlias(titpe, tgt)
 	default:
 		// Warn-and-skip for unsupported kinds (TypeParam, Chan, Signature,
 		// Union, or future go/types additions). The scanner runs on user
@@ -517,10 +531,6 @@ func (s *Builder) buildNamedSlice(tio *types.TypeName, cmt *ast.CommentGroup, el
 // IsStdError(ro) inside the `case *types.Alias:` branch of the RHS
 // switch below do fire: they inspect the alias target, which for
 // `type X = any` resolves to the predeclared any TypeName.
-//
-// For `type Timestamp = time.Time` the date-time format is currently
-// lost — see Q3 in .claude/plans/observed-quirks.md. Any fix belongs
-// in the RHS switch, not here.
 func (s *Builder) buildDeclAlias(tpe *types.Alias, tgt ifaces.SwaggerTypable) error {
 	if resolvers.UnsupportedBuiltinType(tpe) {
 		log.Printf("WARNING: skipped unsupported builtin type: %v", tpe)
