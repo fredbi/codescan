@@ -591,6 +591,53 @@ func TestScanCtx_findEnumValue_EdgeCases(t *testing.T) {
 		assert.EqualT(t, "hello X  first line  second line", descs[0])
 	})
 
+	t.Run("ValueSpec strips godoc leading identifier on single-name spec", func(t *testing.T) {
+		spec := &ast.ValueSpec{
+			Names:  []*ast.Ident{ast.NewIdent("PriorityLow")},
+			Type:   ast.NewIdent("Foo"),
+			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"low"`}},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{{Text: "// PriorityLow is a low-priority level."}},
+			},
+		}
+		values, descs := sctx.findEnumValue(spec, "Foo")
+		require.Len(t, values, 1)
+		assert.EqualT(t, "low PriorityLow is a low-priority level.", descs[0])
+	})
+
+	t.Run("ValueSpec strips leading identifier matching any name in multi-name spec", func(t *testing.T) {
+		spec := &ast.ValueSpec{
+			Names: []*ast.Ident{ast.NewIdent("ChannelEmail"), ast.NewIdent("ChannelSMS")},
+			Type:  ast.NewIdent("Foo"),
+			Values: []ast.Expr{
+				&ast.BasicLit{Kind: token.STRING, Value: `"email"`},
+				&ast.BasicLit{Kind: token.STRING, Value: `"sms"`},
+			},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{{Text: "// ChannelEmail and ChannelSMS share a single spec."}},
+			},
+		}
+		values, descs := sctx.findEnumValue(spec, "Foo")
+		require.Len(t, values, 2)
+		// Both rows strip leading "ChannelEmail" because it matches one of the names.
+		assert.EqualT(t, "email ChannelEmail and ChannelSMS share a single spec.", descs[0])
+		assert.EqualT(t, "sms ChannelSMS and ChannelSMS share a single spec.", descs[1])
+	})
+
+	t.Run("ValueSpec keeps doc unchanged when leading word is not a name", func(t *testing.T) {
+		spec := &ast.ValueSpec{
+			Names:  []*ast.Ident{ast.NewIdent("X")},
+			Type:   ast.NewIdent("Foo"),
+			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"x"`}},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{{Text: "// The x value."}},
+			},
+		}
+		values, descs := sctx.findEnumValue(spec, "Foo")
+		require.Len(t, values, 1)
+		assert.EqualT(t, "x X  The x value.", descs[0])
+	})
+
 	t.Run("ValueSpec with no doc comment yields bare row", func(t *testing.T) {
 		spec := &ast.ValueSpec{
 			Names:  []*ast.Ident{ast.NewIdent("X")},

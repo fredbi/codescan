@@ -353,7 +353,7 @@ func (s *ScanCtx) findEnumValue(spec ast.Spec, enumName string) (values []any, d
 		return nil, nil
 	}
 
-	docSuffix := buildEnumDocSuffix(vs.Doc)
+	docSuffix := buildEnumDocSuffix(vs.Doc, vs.Names)
 
 	for i, nameIdent := range vs.Names {
 		bl, ok := vs.Values[i].(*ast.BasicLit)
@@ -377,7 +377,11 @@ func (s *ScanCtx) findEnumValue(spec ast.Spec, enumName string) (values []any, d
 // buildEnumDocSuffix renders the shared doc comment as " <line1> <line2>..."
 // (with a leading single space, keeping the per-line leading whitespace that
 // survives TrimPrefix("//")), or the empty string if there is no doc.
-func buildEnumDocSuffix(doc *ast.CommentGroup) string {
+//
+// If the first non-empty doc line begins with one of the spec's names
+// (idiomatic godoc convention: "Identifier does X"), that leading identifier
+// is stripped so it does not duplicate the name already present in the row.
+func buildEnumDocSuffix(doc *ast.CommentGroup, names []*ast.Ident) string {
 	if doc == nil || len(doc.List) == 0 {
 		return ""
 	}
@@ -385,12 +389,18 @@ func buildEnumDocSuffix(doc *ast.CommentGroup) string {
 	var b strings.Builder
 	b.WriteString(" ")
 
+	stripped := false
 	for i, line := range doc.List {
 		if line.Text == "" {
 			continue
 		}
 
-		b.WriteString(strings.TrimPrefix(line.Text, "//"))
+		text := strings.TrimPrefix(line.Text, "//")
+		if !stripped {
+			text = stripLeadingName(text, names)
+			stripped = true
+		}
+		b.WriteString(text)
 
 		if i < len(doc.List)-1 {
 			b.WriteString(" ")
@@ -398,6 +408,31 @@ func buildEnumDocSuffix(doc *ast.CommentGroup) string {
 	}
 
 	return b.String()
+}
+
+// stripLeadingName removes a leading identifier from text when that identifier
+// matches one of the provided names. Used to drop the godoc convention prefix
+// ("Identifier does X") from an enum value's doc comment so the identifier is
+// not printed twice in the rendered description row.
+//
+// On match, the original leading whitespace (from TrimPrefix("//")) is also
+// dropped so the caller's single-space separator is not compounded into a
+// double-space gap between the row's name and the remaining prose.
+func stripLeadingName(text string, names []*ast.Ident) string {
+	trimmed := strings.TrimLeft(text, " \t")
+
+	word, rest, found := strings.Cut(trimmed, " ")
+	if !found || word == "" {
+		return text
+	}
+
+	for _, n := range names {
+		if n.Name == word {
+			return rest
+		}
+	}
+
+	return text
 }
 
 func sliceToSet(names []string) map[string]bool {
