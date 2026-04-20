@@ -98,9 +98,10 @@
       "type": "object",
       "title": "Tagger is a non-empty named interface used as an allOf member.",
       "properties": {
-        "Tag": {
+        "tag": {
           "description": "Tag returns an identifier.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "Tag"
         }
       },
       "x-go-package": "github.com/go-openapi/codescan/fixtures/enhancements/allof-edges"

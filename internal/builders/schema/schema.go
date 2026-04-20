@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/go-openapi/swag/mangling"
 	"golang.org/x/tools/go/packages"
 
 	"github.com/go-openapi/codescan/internal/builders/resolvers"
@@ -30,12 +31,28 @@ type Builder struct {
 	annotated  bool
 	discovered []*scanner.EntityDecl
 	postDecls  []*scanner.EntityDecl
+
+	// interfaceMethodMangler produces JSON-style property names from Go
+	// interface-method names. Interface methods cannot carry struct tags, so
+	// codescan can't read a per-field convention — instead it applies the
+	// same transform go-swagger uses for tag-less struct fields (acronym-aware
+	// lower-first, e.g. `CreatedAt → createdAt`, `ID → id`,
+	// `ExternalID → externalId`). `swagger:name` still takes precedence when
+	// present. NameMangler is thread-safe per its godoc.
+	//
+	// Pointer so that the zero value (nil) is safely detected and lazily
+	// initialized by interfaceJSONName — a zero mangling.NameMangler value
+	// panics on use, and tests that construct &Builder{…} directly bypass
+	// NewBuilder.
+	interfaceMethodMangler *mangling.NameMangler
 }
 
 func NewBuilder(ctx *scanner.ScanCtx, decl *scanner.EntityDecl) *Builder {
+	m := mangling.NewNameMangler()
 	return &Builder{
-		ctx:  ctx,
-		decl: decl,
+		ctx:                    ctx,
+		decl:                   decl,
+		interfaceMethodMangler: &m,
 	}
 }
 
@@ -87,6 +104,17 @@ func (s *Builder) inferNames() {
 	if override != "" {
 		s.Name = override
 	}
+}
+
+// interfaceJSONName maps a Go interface-method name to its JSON property
+// name via the Builder's mangler, lazily initializing the mangler on first
+// use so a zero-value Builder remains usable.
+func (s *Builder) interfaceJSONName(goName string) string {
+	if s.interfaceMethodMangler == nil {
+		m := mangling.NewNameMangler()
+		s.interfaceMethodMangler = &m
+	}
+	return s.interfaceMethodMangler.ToJSONName(goName)
 }
 
 func (s *Builder) buildFromDecl(_ *scanner.EntityDecl, schema *oaispec.Schema) error {
@@ -664,7 +692,7 @@ func (s *Builder) processAnonInterfaceMethod(fld *types.Func, it *types.Interfac
 
 	name, ok := parsers.NameOverride(afld.Doc)
 	if !ok {
-		name = fld.Name()
+		name = s.interfaceJSONName(fld.Name())
 	}
 
 	if schema.Properties == nil {
@@ -894,7 +922,7 @@ func (s *Builder) processInterfaceMethod(fld *types.Func, it *types.Interface, d
 
 	name, ok := parsers.NameOverride(afld.Doc)
 	if !ok {
-		name = fld.Name()
+		name = s.interfaceJSONName(fld.Name())
 	}
 
 	ps := tgt.Properties[name]
