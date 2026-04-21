@@ -201,7 +201,17 @@ func (p *parseState) parse() Block {
 	} else {
 		base = newBaseBlock(AnnUnknown, firstMeaningfulPos(p.tokens))
 		typed = &UnboundBlock{baseBlock: base}
-		post = p.tokens
+		// For UnboundBlock (no annotation, e.g., a struct-field
+		// docstring), split at the first body token so the prose
+		// prelude still becomes Title/Description. Without this,
+		// `// Name of the user.\n// required: true` loses the
+		// docstring entirely.
+		if splitIdx := findBodyStart(p.tokens); splitIdx >= 0 {
+			pre = p.tokens[:splitIdx]
+			post = p.tokens[splitIdx:]
+		} else {
+			pre = p.tokens
+		}
 	}
 
 	p.parseTitleDesc(base, pre)
@@ -297,6 +307,27 @@ func formatKeywordContexts(ctxs []ContextDoc) string {
 func findAnnotation(tokens []Token) int {
 	for i, t := range tokens {
 		if t.Kind == TokenAnnotation {
+			return i
+		}
+	}
+	return -1
+}
+
+// findBodyStart returns the index of the first "body" token — a
+// keyword, YAML fence, or raw YAML line — or -1 if the stream is
+// entirely prose (TEXT + BLANK + EOF). Used to split UnboundBlock
+// tokens into a Title/Description prelude and a property body.
+func findBodyStart(tokens []Token) int {
+	for i, t := range tokens {
+		switch t.Kind {
+		case TokenKeywordValue, TokenKeywordBlockHead,
+			TokenYAMLFence, TokenRawLine:
+			return i
+		case TokenEOF, TokenBlank, TokenText, TokenAnnotation:
+			// Prose / control tokens — keep scanning.
+		default:
+			// Future kinds: err on the side of treating them as
+			// body so analyzers notice.
 			return i
 		}
 	}
