@@ -18,11 +18,12 @@ type TokenKind int
 const (
 	TokenEOF              TokenKind = iota // end of stream
 	TokenBlank                             // empty line (after trim)
-	TokenText                              // freeform content (title, description, block body)
+	TokenText                              // freeform content (title, description)
 	TokenAnnotation                        // "swagger:<name> [args...]"
 	TokenKeywordValue                      // "<keyword>: <value>"
 	TokenKeywordBlockHead                  // "<keyword>:" (value-less; indicates a block follows)
 	TokenYAMLFence                         // "---" delimiter
+	TokenRawLine                           // verbatim line inside a YAML fence (Text = Line.Raw)
 )
 
 // String renders a TokenKind for debugging and diagnostics.
@@ -42,6 +43,8 @@ func (k TokenKind) String() string {
 		return "KEYWORD_BLOCK_HEAD"
 	case TokenYAMLFence:
 		return "YAML_FENCE"
+	case TokenRawLine:
+		return "RAW_LINE"
 	default:
 		return "?"
 	}
@@ -69,26 +72,40 @@ type Token struct {
 }
 
 // Lex turns a preprocessed line slice into a token stream terminated
-// by TokenEOF. The lexer is context-free (no fence/state tracking);
-// the parser decides whether a TokenText sits inside a YAML body.
+// by TokenEOF. The lexer tracks one bit of state — whether the cursor
+// is between a pair of `---` fences — so that YAML bodies survive as
+// TokenRawLine tokens with their original indentation intact.
 func Lex(lines []Line) []Token {
 	out := make([]Token, 0, len(lines)+1)
+	inFence := false
 	for _, line := range lines {
-		out = append(out, lexLine(line))
+		tok := lexLine(line, inFence)
+		out = append(out, tok)
+		if tok.Kind == TokenYAMLFence {
+			inFence = !inFence
+		}
 	}
 	out = append(out, Token{Kind: TokenEOF})
 	return out
 }
 
-// lexLine classifies a single preprocessed line.
-func lexLine(line Line) Token {
+// lexLine classifies a single preprocessed line. inFence is true when
+// the line sits between an opening `---` and its matching closer; in
+// that case everything except the closing fence becomes TokenRawLine
+// carrying Line.Raw verbatim.
+func lexLine(line Line, inFence bool) Token {
 	text := strings.TrimRight(line.Text, " \t")
 
-	if text == "" {
-		return Token{Kind: TokenBlank, Pos: line.Pos}
-	}
+	// Fence detection is always active — a closing `---` is recognised
+	// even mid-body.
 	if strings.TrimSpace(text) == "---" {
 		return Token{Kind: TokenYAMLFence, Pos: line.Pos}
+	}
+	if inFence {
+		return Token{Kind: TokenRawLine, Pos: line.Pos, Text: line.Raw}
+	}
+	if text == "" {
+		return Token{Kind: TokenBlank, Pos: line.Pos}
 	}
 	if strings.HasPrefix(text, "swagger:") {
 		return lexAnnotation(text, line.Pos)

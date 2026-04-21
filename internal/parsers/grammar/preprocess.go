@@ -13,10 +13,14 @@ import (
 //
 // Text has the Go comment markers (// /* */) stripped, along with
 // leading continuation decorations common in godoc comments (spaces,
-// tabs, asterisks, slashes, dashes, optional markdown table pipe).
-// Internal content and embedded whitespace are preserved — fence-body
-// indentation handling lives at the lexer layer where fence state is
-// tracked.
+// tabs, asterisks, slashes, optional markdown table pipe). This is
+// what the lexer uses for classification.
+//
+// Raw is the same source line with *only* the Go comment marker and
+// the block-continuation `*` (if any) removed — content whitespace,
+// including YAML indentation, is preserved. This is what the lexer
+// emits as TokenRawLine inside a --- fence so YAML bodies survive
+// verbatim for handoff to internal/parsers/yaml/.
 //
 // Pos is the position of Text's first character in the source file:
 // Line/Column are accurate on every line (including continuation
@@ -24,6 +28,7 @@ import (
 // the start of the file.
 type Line struct {
 	Text string
+	Raw  string
 	Pos  token.Position
 }
 
@@ -50,6 +55,12 @@ func Preprocess(cg *ast.CommentGroup, fset *token.FileSet) []Line {
 // `/* … */` block form, including multi-line blocks. Each emitted
 // Line's Pos points precisely to the first character of Text in the
 // source file (Line, Column, and Offset all accurate).
+//
+// Line.Raw differs per comment kind:
+//   - `//` lines strip one leading space (the godoc `// ` convention);
+//   - `/* … */` continuation lines strip the `\s*\*\s?` pattern if
+//     present, otherwise preserve all leading whitespace so YAML
+//     indentation inside a fenced body survives.
 func stripComment(raw string, basePos token.Position) []Line {
 	const markerLen = 2 // "//" and "/*" are both 2 bytes
 	switch {
@@ -57,7 +68,7 @@ func stripComment(raw string, basePos token.Position) []Line {
 		pos := basePos
 		pos.Column += markerLen
 		pos.Offset += markerLen
-		return []Line{stripLine(raw[markerLen:], pos)}
+		return []Line{stripLine(raw[markerLen:], pos, stripSingleGodocSpace)}
 
 	case strings.HasPrefix(raw, "/*"):
 		body := strings.TrimSuffix(raw[markerLen:], "*/")
@@ -85,7 +96,7 @@ func stripComment(raw string, basePos token.Position) []Line {
 				pos.Column = 1
 				pos.Offset += markerLen + lineOffset
 			}
-			out = append(out, stripLine(segment, pos))
+			out = append(out, stripLine(segment, pos, stripBlockContinuation))
 
 			if nl < 0 {
 				break
@@ -98,19 +109,50 @@ func stripComment(raw string, basePos token.Position) []Line {
 		// Not a valid Go comment; preserve input defensively so
 		// downstream layers can surface a diagnostic rather than
 		// silently lose data.
-		return []Line{{Text: raw, Pos: basePos}}
+		return []Line{{Text: raw, Raw: raw, Pos: basePos}}
 	}
 }
 
 // stripLine trims the leading decoration of a single line and advances
 // pos by the number of bytes consumed. pos must already point to the
-// first character of the (unstripped) line in the source.
-func stripLine(s string, pos token.Position) Line {
+// first character of the (unstripped) line in the source. rawStrip is
+// the strategy used to compute Line.Raw — see stripSingleGodocSpace
+// (for // lines) and stripBlockContinuation (for /* */ lines).
+func stripLine(s string, pos token.Position, rawStrip func(string) string) Line {
 	stripped := trimContentPrefix(s)
 	consumed := len(s) - len(stripped)
 	pos.Column += consumed
 	pos.Offset += consumed
-	return Line{Text: stripped, Pos: pos}
+	return Line{Text: stripped, Raw: rawStrip(s), Pos: pos}
+}
+
+// stripSingleGodocSpace strips one leading space or tab — the godoc
+// `// ` convention — preserving all other content whitespace. Used
+// for Line.Raw on `//` comment lines.
+func stripSingleGodocSpace(s string) string {
+	if len(s) > 0 && (s[0] == ' ' || s[0] == '\t') {
+		return s[1:]
+	}
+	return s
+}
+
+// stripBlockContinuation recognises the `\s*\*\s?` prefix that godoc
+// `/* … */` continuation lines carry, stripping it when present and
+// preserving all leading whitespace otherwise. Used for Line.Raw on
+// `/* … */` lines so YAML indentation inside fenced bodies survives.
+func stripBlockContinuation(s string) string {
+	i := 0
+	for i < len(s) && (s[i] == ' ' || s[i] == '\t') {
+		i++
+	}
+	if i < len(s) && s[i] == '*' {
+		i++
+		if i < len(s) && s[i] == ' ' {
+			i++
+		}
+		return s[i:]
+	}
+	return s
 }
 
 // trimContentPrefix removes the leading godoc-style decoration that

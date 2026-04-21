@@ -285,7 +285,7 @@ func (p *parseState) parseTitleDesc(base *baseBlock, pre []Token) {
 		case TokenEOF,
 			TokenAnnotation,
 			TokenKeywordValue, TokenKeywordBlockHead,
-			TokenYAMLFence:
+			TokenYAMLFence, TokenRawLine:
 			// Ignored in the title/description slice.
 		default:
 			// Unreachable at v1; future kinds ignored defensively.
@@ -317,7 +317,9 @@ func (p *parseState) parseBody(base *baseBlock, post []Token) {
 	for i < len(post) {
 		t := post[i]
 		switch t.Kind {
-		case TokenEOF, TokenBlank, TokenText:
+		case TokenEOF, TokenBlank, TokenText, TokenRawLine:
+			// TokenRawLine outside a fence shouldn't happen (lexer
+			// tracks fence state) — ignore defensively.
 			i++
 
 		case TokenKeywordValue:
@@ -357,19 +359,16 @@ func (p *parseState) parseBody(base *baseBlock, post []Token) {
 // index i and its matching closer (or EOF). Emits an UnterminatedYAML
 // diagnostic if no closer is found. Returns the index past the closer.
 //
-// NOTE: line reconstruction is best-effort at P1.4 — tokens have been
-// classified (so `responses:` became a KEYWORD_BLOCK_HEAD), and
-// indentation is lost because the preprocessor already trimmed it.
-// P2.1 will add fence-state tracking so raw YAML bytes survive
-// verbatim. Until then, YAML bodies captured here are suitable for
-// Kind/content detection but not for full YAML re-parsing.
+// Inside a fence the lexer emits TokenRawLine tokens carrying Line.Raw,
+// so the body survives verbatim (indentation preserved) and can be
+// handed directly to internal/parsers/yaml/ for further parsing.
 func (p *parseState) collectYAMLBody(base *baseBlock, post []Token, i int) int {
 	openerPos := post[i].Pos
 	i++
 
 	var body []string
 	for i < len(post) && post[i].Kind != TokenYAMLFence && post[i].Kind != TokenEOF {
-		body = append(body, reconstructLine(post[i]))
+		body = append(body, post[i].Text)
 		i++
 	}
 
@@ -473,30 +472,5 @@ func parseBool(s string) (bool, bool) {
 		return false, true
 	default:
 		return false, false
-	}
-}
-
-// reconstructLine returns a best-effort text rendering of a Token as
-// it appeared on the source line. Used inside YAML fence capture where
-// the classifier has already split `keyword:` into KEYWORD_BLOCK_HEAD.
-// Indentation is NOT preserved (preprocessor already stripped it);
-// P2.1 will fix this.
-func reconstructLine(t Token) string {
-	switch t.Kind {
-	case TokenBlank:
-		return ""
-	case TokenKeywordValue:
-		return t.Text + ": " + t.Value
-	case TokenKeywordBlockHead:
-		return t.Text + ":"
-	case TokenAnnotation:
-		if len(t.Args) > 0 {
-			return "swagger:" + t.Text + " " + strings.Join(t.Args, " ")
-		}
-		return "swagger:" + t.Text
-	case TokenEOF, TokenYAMLFence, TokenText:
-		return t.Text
-	default:
-		return t.Text
 	}
 }
