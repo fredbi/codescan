@@ -51,27 +51,48 @@ type Parser interface {
 // ast.CommentGroup positions to absolute source positions). The
 // returned Parser is safe for concurrent use across goroutines.
 //
+// Variadic Options tune behavior — see WithDiagnosticSink. A
+// zero-option call is the common case.
+//
 //nolint:ireturn // Parser is the intentional public interface; callers depend on the surface, not the concrete type.
-func NewParser(fset *token.FileSet) Parser {
-	return &parserImpl{fset: fset}
+func NewParser(fset *token.FileSet, opts ...Option) Parser {
+	p := &parserImpl{fset: fset}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
+}
+
+// Option configures a Parser built with NewParser.
+type Option func(*parserImpl)
+
+// WithDiagnosticSink sets an optional callback invoked for every
+// Diagnostic the parser emits, in addition to accumulating it on
+// the returned Block. Useful for LSP streaming where diagnostics
+// must be surfaced as they are produced, not batched until parse
+// completes. The sink runs on the parser's goroutine; callers
+// needing async delivery should push into a channel.
+func WithDiagnosticSink(sink func(Diagnostic)) Option {
+	return func(p *parserImpl) { p.diagnosticSink = sink }
 }
 
 type parserImpl struct {
-	fset *token.FileSet
+	fset           *token.FileSet
+	diagnosticSink func(Diagnostic)
 }
 
 //nolint:ireturn // see Parse godoc
 func (p *parserImpl) Parse(cg *ast.CommentGroup) Block {
 	lines := Preprocess(cg, p.fset)
 	tokens := Lex(lines)
-	return ParseTokens(tokens)
+	return p.runParser(tokens)
 }
 
 //nolint:ireturn // see Parse godoc
 func (p *parserImpl) ParseText(text string, pos token.Position) Block {
 	lines := preprocessText(text, pos)
 	tokens := Lex(lines)
-	return ParseTokens(tokens)
+	return p.runParser(tokens)
 }
 
 //nolint:ireturn // see Parse godoc
@@ -82,6 +103,15 @@ func (p *parserImpl) ParseAs(kind AnnotationKind, text string, pos token.Positio
 	// first) — the injected line is effectively decorative.
 	injected := "swagger:" + kind.String() + "\n" + text
 	return p.ParseText(injected, pos)
+}
+
+// runParser constructs a parseState wired with the parserImpl's
+// options (diagnostic sink, future additions) and delegates.
+//
+//nolint:ireturn // see Parse godoc
+func (p *parserImpl) runParser(tokens []Token) Block {
+	ps := &parseState{tokens: tokens, sink: p.diagnosticSink}
+	return ps.parse()
 }
 
 // Parse runs the full preprocess → lex → parse pipeline on a comment
@@ -129,6 +159,16 @@ func preprocessText(text string, basePos token.Position) []Line {
 type parseState struct {
 	tokens []Token
 	diag   []Diagnostic
+	sink   func(Diagnostic)
+}
+
+// emit records a diagnostic: appends to the block-local slice AND
+// (if configured) pushes to the optional sink for streaming.
+func (p *parseState) emit(d Diagnostic) {
+	if p.sink != nil {
+		p.sink(d)
+	}
+	p.diag = append(p.diag, d)
 }
 
 //nolint:ireturn // see Parse godoc
@@ -178,7 +218,7 @@ func (p *parseState) checkContextValidity(base *baseBlock) {
 		if contextsOverlap(prop.Keyword.Contexts, allowed) {
 			continue
 		}
-		p.diag = append(p.diag, Warnf(prop.Pos, CodeContextInvalid,
+		p.emit(Warnf(prop.Pos, CodeContextInvalid,
 			"keyword %q not valid under swagger:%s (legal in: %s)",
 			prop.Keyword.Name, base.kind,
 			formatKeywordContexts(prop.Keyword.Contexts)))
@@ -321,7 +361,7 @@ func (p *parseState) fillOperationArgs(method, path, tags, opID *string, tok Tok
 	args := tok.Args
 	switch {
 	case len(args) < minOpArgs:
-		p.diag = append(p.diag, Errorf(tok.Pos, CodeInvalidAnnotation,
+		p.emit(Errorf(tok.Pos, CodeInvalidAnnotation,
 			"swagger:%s requires method, path, and operation id (got %d args)",
 			tok.Text, len(args)))
 	case len(args) == minOpArgs:
@@ -422,7 +462,7 @@ func (p *parseState) parseBody(base *baseBlock, post []Token) {
 			i = p.collectYAMLBody(base, post, i)
 
 		case TokenAnnotation:
-			p.diag = append(p.diag, Warnf(t.Pos, CodeInvalidAnnotation,
+			p.emit(Warnf(t.Pos, CodeInvalidAnnotation,
 				"additional swagger:%s annotation ignored (one per comment block)",
 				t.Text))
 			i++
@@ -476,7 +516,7 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 			if isExtensions {
 				if ext, ok := parseExtensionLine(next); ok {
 					if !isExtensionName(ext.Name) {
-						p.diag = append(p.diag, Warnf(ext.Pos, CodeInvalidExtension,
+						p.emit(Warnf(ext.Pos, CodeInvalidExtension,
 							"extension name %q must begin with 'x-' or 'X-'", ext.Name))
 					}
 					base.extensions = append(base.extensions, ext)
@@ -560,7 +600,7 @@ func (p *parseState) collectYAMLBody(base *baseBlock, post []Token, i int) int {
 	if i < len(post) && post[i].Kind == TokenYAMLFence {
 		i++ // consume closer
 	} else {
-		p.diag = append(p.diag, Errorf(openerPos, CodeUnterminatedYAML,
+		p.emit(Errorf(openerPos, CodeUnterminatedYAML,
 			"YAML body opened with --- but never closed"))
 	}
 
@@ -589,7 +629,7 @@ func (p *parseState) typeConvert(kw Keyword, raw string, pos token.Position) Typ
 		op, rest := splitCmpOperator(raw)
 		n, err := strconv.ParseFloat(strings.TrimSpace(rest), 64)
 		if err != nil {
-			p.diag = append(p.diag, Errorf(pos, CodeInvalidNumber,
+			p.emit(Errorf(pos, CodeInvalidNumber,
 				"%s: %q is not a valid number", kw.Name, raw))
 			return TypedValue{}
 		}
@@ -598,7 +638,7 @@ func (p *parseState) typeConvert(kw Keyword, raw string, pos token.Position) Typ
 	case ValueInteger:
 		i, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
 		if err != nil {
-			p.diag = append(p.diag, Errorf(pos, CodeInvalidInteger,
+			p.emit(Errorf(pos, CodeInvalidInteger,
 				"%s: %q is not a valid integer", kw.Name, raw))
 			return TypedValue{}
 		}
@@ -607,7 +647,7 @@ func (p *parseState) typeConvert(kw Keyword, raw string, pos token.Position) Typ
 	case ValueBoolean:
 		b, ok := parseBool(raw)
 		if !ok {
-			p.diag = append(p.diag, Errorf(pos, CodeInvalidBoolean,
+			p.emit(Errorf(pos, CodeInvalidBoolean,
 				"%s: %q is not a valid boolean (expected true or false)", kw.Name, raw))
 			return TypedValue{}
 		}
@@ -619,7 +659,7 @@ func (p *parseState) typeConvert(kw Keyword, raw string, pos token.Position) Typ
 				return TypedValue{Type: ValueStringEnum, String: allowed}
 			}
 		}
-		p.diag = append(p.diag, Errorf(pos, CodeInvalidStringEnum,
+		p.emit(Errorf(pos, CodeInvalidStringEnum,
 			"%s: %q is not one of {%s}",
 			kw.Name, raw, strings.Join(kw.Value.Values, ", ")))
 		return TypedValue{}

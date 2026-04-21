@@ -85,6 +85,72 @@ func TestParserInterfaceSatisfiedByImpl(t *testing.T) {
 	_ = t
 }
 
+func TestWithDiagnosticSinkStreams(t *testing.T) {
+	// WithDiagnosticSink delivers each diagnostic to the callback in
+	// addition to accumulating it on the returned Block.
+	src := `package p
+
+// swagger:model Foo
+// in: query
+// maximum: notanumber
+type Foo int
+`
+	cg, fset := parseCommentGroup(t, src)
+
+	var streamed []Diagnostic
+	p := NewParser(fset, WithDiagnosticSink(func(d Diagnostic) {
+		streamed = append(streamed, d)
+	}))
+
+	b := p.Parse(cg)
+
+	// Block accumulation still populated.
+	if len(b.Diagnostics()) == 0 {
+		t.Fatal("Block should still accumulate diagnostics")
+	}
+	// Sink received every diagnostic.
+	if len(streamed) != len(b.Diagnostics()) {
+		t.Errorf("sink got %d, block got %d — must match",
+			len(streamed), len(b.Diagnostics()))
+	}
+	// At least one diagnostic of each expected code (in: illegal +
+	// maximum not-a-number).
+	codes := map[Code]bool{}
+	for _, d := range streamed {
+		codes[d.Code] = true
+	}
+	if !codes[CodeContextInvalid] {
+		t.Errorf("expected CodeContextInvalid in stream, got %+v", codes)
+	}
+	if !codes[CodeInvalidNumber] {
+		t.Errorf("expected CodeInvalidNumber in stream, got %+v", codes)
+	}
+}
+
+func TestWithDiagnosticSinkNilByDefault(t *testing.T) {
+	// No options → sink is nil → behavior matches pre-P3.2.
+	src := `package p
+
+// swagger:model Foo
+// in: query
+type Foo int
+`
+	cg, fset := parseCommentGroup(t, src)
+	p := NewParser(fset)
+
+	b := p.Parse(cg)
+	// Should still have the context-invalid diagnostic on the block.
+	found := false
+	for _, d := range b.Diagnostics() {
+		if d.Code == CodeContextInvalid {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("no options path should still accumulate diagnostics")
+	}
+}
+
 func TestPackageLevelParseStillWorks(t *testing.T) {
 	// Backward-compat: the original top-level Parse(cg, fset) is a
 	// thin wrapper around NewParser(fset).Parse(cg).
