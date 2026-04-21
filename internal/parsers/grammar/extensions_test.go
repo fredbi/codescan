@@ -145,6 +145,68 @@ type Root struct{}
 	}
 }
 
+func TestExtensionsInvalidNameDiagnostic(t *testing.T) {
+	// A line like `not-an-extension: value` parses as an Extension
+	// (it has `name: value` form) but fails the x-* well-formedness
+	// check, emitting a CodeInvalidExtension warning.
+	src := `package p
+
+// swagger:meta
+//
+// extensions:
+//   x-good: one
+//   not-an-extension: two
+type Root struct{}
+`
+	cg, fset := parseCommentGroup(t, src)
+	b := Parse(cg, fset)
+
+	var invalidDiags []Diagnostic
+	for _, d := range b.Diagnostics() {
+		if d.Code == CodeInvalidExtension {
+			invalidDiags = append(invalidDiags, d)
+		}
+	}
+	if len(invalidDiags) != 1 {
+		t.Fatalf("want 1 CodeInvalidExtension diagnostic, got %d: %+v",
+			len(invalidDiags), b.Diagnostics())
+	}
+	if invalidDiags[0].Severity != SeverityWarning {
+		t.Errorf("severity: got %v want warning", invalidDiags[0].Severity)
+	}
+
+	// The extension is still collected (so analyzers can decide how
+	// to respond) even though the name is invalid.
+	names := []string{}
+	for e := range b.Extensions() {
+		names = append(names, e.Name)
+	}
+	if len(names) != 2 {
+		t.Errorf("invalid extensions still survive in the list; want 2, got %d: %v",
+			len(names), names)
+	}
+}
+
+func TestExtensionsAcceptsUppercaseX(t *testing.T) {
+	// Both `x-` and `X-` are accepted (matches v1 rxAllowedExtensions).
+	src := `package p
+
+// swagger:meta
+//
+// extensions:
+//   X-Uppercase: value
+type Root struct{}
+`
+	cg, fset := parseCommentGroup(t, src)
+	b := Parse(cg, fset)
+
+	for _, d := range b.Diagnostics() {
+		if d.Code == CodeInvalidExtension {
+			t.Errorf("X- prefix must be accepted, got %+v", d)
+		}
+	}
+}
+
 func TestExtensionsMalformedLineIgnored(t *testing.T) {
 	// A body line without a ':' can't form an extension; collected
 	// into Body but not emitted as an Extension.

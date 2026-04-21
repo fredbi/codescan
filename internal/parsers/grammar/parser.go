@@ -392,6 +392,10 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 			prop.Body = append(prop.Body, next.Text)
 			if isExtensions {
 				if ext, ok := parseExtensionLine(next); ok {
+					if !isExtensionName(ext.Name) {
+						p.diag = append(p.diag, Warnf(ext.Pos, CodeInvalidExtension,
+							"extension name %q must begin with 'x-' or 'X-'", ext.Name))
+					}
 					base.extensions = append(base.extensions, ext)
 				}
 			}
@@ -415,6 +419,21 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 // extensions block (i.e., `extensions:` or `infoExtensions:`).
 func isExtensionBlock(name string) bool {
 	return name == "extensions" || name == "infoExtensions"
+}
+
+// isExtensionName reports whether s is a well-formed OpenAPI vendor
+// extension name: it must begin with "x-" or "X-" and have at least
+// one character after the hyphen. Mirrors the v1 rxAllowedExtensions
+// check (`^[Xx]-`).
+func isExtensionName(s string) bool {
+	const minExtNameLen = 3 // "x-" + at least one suffix character
+	if len(s) < minExtNameLen {
+		return false
+	}
+	if (s[0] != 'x' && s[0] != 'X') || s[1] != '-' {
+		return false
+	}
+	return true
 }
 
 // parseExtensionLine extracts `name: value` from a body TEXT token,
