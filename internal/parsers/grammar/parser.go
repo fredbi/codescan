@@ -357,6 +357,11 @@ func (p *parseState) parseBody(base *baseBlock, post []Token) {
 // fence, or EOF. Blank tokens are treated as body-internal separators
 // if followed by more text; a trailing run of blanks is trimmed.
 //
+// When the block-head keyword is "extensions" or "infoExtensions",
+// each body line of the form `name: value` is *also* emitted as a
+// top-level Extension on the Block so `block.Extensions()` exposes
+// them uniformly. The original Body is still populated.
+//
 // Returns the index past the last body token consumed.
 func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int {
 	head := post[i]
@@ -366,6 +371,8 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 		ItemsDepth: head.ItemsDepth,
 	}
 	i++
+
+	isExtensions := isExtensionBlock(head.Keyword.Name)
 
 	var pendingBlanks int
 	for i < len(post) {
@@ -383,6 +390,11 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 			}
 			pendingBlanks = 0
 			prop.Body = append(prop.Body, next.Text)
+			if isExtensions {
+				if ext, ok := parseExtensionLine(next); ok {
+					base.extensions = append(base.extensions, ext)
+				}
+			}
 		case TokenBlank:
 			// Defer — include only if more text follows within the
 			// block. Trailing blanks are dropped.
@@ -397,6 +409,33 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 
 	base.properties = append(base.properties, prop)
 	return i
+}
+
+// isExtensionBlock reports whether the given keyword name declares an
+// extensions block (i.e., `extensions:` or `infoExtensions:`).
+func isExtensionBlock(name string) bool {
+	return name == "extensions" || name == "infoExtensions"
+}
+
+// parseExtensionLine extracts `name: value` from a body TEXT token,
+// returning an Extension with the token's Pos. Returns (zero, false)
+// for lines that don't match the form. Name and Value are
+// whitespace-trimmed; name-well-formedness (the `x-*` requirement)
+// is a separate P2.4 check downstream.
+func parseExtensionLine(t Token) (Extension, bool) {
+	before, after, found := strings.Cut(t.Text, ":")
+	if !found {
+		return Extension{}, false
+	}
+	name := strings.TrimSpace(before)
+	if name == "" {
+		return Extension{}, false
+	}
+	return Extension{
+		Name:  name,
+		Value: strings.TrimSpace(after),
+		Pos:   t.Pos,
+	}, true
 }
 
 // collectYAMLBody captures everything between a YAML_FENCE opener at
