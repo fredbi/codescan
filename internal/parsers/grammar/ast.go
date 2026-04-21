@@ -6,6 +6,7 @@ package grammar
 import (
 	"go/token"
 	"iter"
+	"strings"
 )
 
 // Block is the interface implemented by every typed AST node the
@@ -14,6 +15,8 @@ import (
 // and add the fields specific to their annotation.
 //
 // See architecture §4.6.
+//
+//nolint:interfacebloat // 14 methods is deliberate — Block is the single consumer contract for both builders and LSP; splitting introduces friction at every call site.
 type Block interface {
 	// Pos reports the position of the block's defining token — the
 	// annotation line for annotated blocks, or the first comment line
@@ -45,6 +48,26 @@ type Block interface {
 	// dispatched from (UnboundBlock returns AnnUnknown). Used by
 	// analyzers to type-switch-check without reflection.
 	AnnotationKind() AnnotationKind
+
+	// Has reports whether any property matches the given keyword
+	// name (canonical or alias, case-insensitive).
+	Has(name string) bool
+	// GetFloat returns the Number-typed value for the first matching
+	// keyword. ok is false if the keyword is absent or its ValueType
+	// isn't Number.
+	GetFloat(name string) (float64, bool)
+	// GetInt returns the Integer-typed value.
+	GetInt(name string) (int64, bool)
+	// GetBool returns the Boolean-typed value.
+	GetBool(name string) (bool, bool)
+	// GetString returns the string-form of the first matching
+	// keyword's value: canonical label for StringEnum, raw Value
+	// otherwise (pattern, version, host, …).
+	GetString(name string) (string, bool)
+	// GetList returns the value as a []string: Body lines for
+	// KEYWORD_BLOCK_HEAD properties; comma-split values for
+	// ValueCommaList; nil+false otherwise.
+	GetList(name string) ([]string, bool)
 }
 
 // AnnotationKind identifies the top-level "swagger:xxx" directive
@@ -275,6 +298,98 @@ func (b *baseBlock) Extensions() iter.Seq[Extension] {
 			}
 		}
 	}
+}
+
+// --- typed accessors (P3.3) ---
+
+func (b *baseBlock) Has(name string) bool {
+	_, ok := b.findProperty(name)
+	return ok
+}
+
+func (b *baseBlock) GetFloat(name string) (float64, bool) {
+	p, ok := b.findProperty(name)
+	if !ok || p.Typed.Type != ValueNumber {
+		return 0, false
+	}
+	return p.Typed.Number, true
+}
+
+func (b *baseBlock) GetInt(name string) (int64, bool) {
+	p, ok := b.findProperty(name)
+	if !ok || p.Typed.Type != ValueInteger {
+		return 0, false
+	}
+	return p.Typed.Integer, true
+}
+
+func (b *baseBlock) GetBool(name string) (bool, bool) {
+	p, ok := b.findProperty(name)
+	if !ok || p.Typed.Type != ValueBoolean {
+		return false, false
+	}
+	return p.Typed.Boolean, true
+}
+
+func (b *baseBlock) GetString(name string) (string, bool) {
+	p, ok := b.findProperty(name)
+	if !ok {
+		return "", false
+	}
+	if p.Typed.Type == ValueStringEnum {
+		return p.Typed.String, true
+	}
+	return p.Value, true
+}
+
+func (b *baseBlock) GetList(name string) ([]string, bool) {
+	p, ok := b.findProperty(name)
+	if !ok {
+		return nil, false
+	}
+	if len(p.Body) > 0 {
+		// Defensive copy — callers shouldn't be able to mutate the
+		// block's internal state.
+		out := make([]string, len(p.Body))
+		copy(out, p.Body)
+		return out, true
+	}
+	if p.Keyword.Value.Type == ValueCommaList && p.Value != "" {
+		return splitCommaList(p.Value), true
+	}
+	return nil, false
+}
+
+// findProperty is the shared lookup: first Property whose keyword
+// name (or alias, case-insensitive) matches.
+func (b *baseBlock) findProperty(name string) (Property, bool) {
+	for _, p := range b.properties {
+		if strings.EqualFold(p.Keyword.Name, name) {
+			return p, true
+		}
+		for _, alias := range p.Keyword.Aliases {
+			if strings.EqualFold(alias, name) {
+				return p, true
+			}
+		}
+	}
+	return Property{}, false
+}
+
+// splitCommaList splits a "a, b, c" value on commas, trimming
+// whitespace. Quoted strings are not recognised — a later refinement
+// (per architecture §2.1 enum note) can add that; v1 parity is comma-
+// and-trim.
+func splitCommaList(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 // --- typed Block kinds ---

@@ -162,7 +162,7 @@ type PetParams struct{}
 	if p.Typed.Type != ValueStringEnum {
 		t.Fatalf("Typed.Type: got %v want ValueStringEnum", p.Typed.Type)
 	}
-	if p.Typed.String != "query" {
+	if p.Typed.String != fixtureEnumInQuery {
 		t.Errorf("String: got %q want query", p.Typed.String)
 	}
 }
@@ -178,7 +178,7 @@ func TestTypeConvertStringEnumCanonicalizes(t *testing.T) {
 type PetParams struct{}
 `
 	p, _ := firstPropertyTyped(t, src)
-	if p.Typed.String != "query" {
+	if p.Typed.String != fixtureEnumInQuery {
 		t.Errorf("canonicalized String: got %q want query (table casing)", p.Typed.String)
 	}
 }

@@ -19,6 +19,8 @@ const (
 	fixtureModelName    = "Foo"
 	fixtureBlockKw      = "consumes"
 	fixtureValidationKw = "maximum"
+	fixtureMutatedMark  = "mutated"
+	fixtureEnumInQuery  = "query"
 )
 
 // --- annotation-line ---
