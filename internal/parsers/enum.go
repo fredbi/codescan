@@ -49,7 +49,19 @@ func (se *SetEnum) Parse(lines []string) error {
 	return nil
 }
 
-func parseValueFromSchema(s string, schema *spec.SimpleSchema) (any, error) {
+// ParseValueFromSchema converts a raw annotation value to the Go
+// representation implied by the target schema's Type/Format. Used by
+// default:/example: setters where the annotation body is a primitive
+// literal whose meaning depends on the target: `default: 3` becomes
+// int(3) against `Type: "integer"`, "3" against `Type: "string"`, and
+// so on. JSON-typed targets (`object`, `array`) attempt unmarshal and
+// fall back to the raw string on invalid JSON.
+//
+// A nil schema yields the raw string unchanged. Numeric/boolean
+// parsing errors are surfaced to the caller; JSON-parse failures are
+// absorbed (documented as a v1 quirk and currently preserved for
+// parity).
+func ParseValueFromSchema(s string, schema *spec.SimpleSchema) (any, error) {
 	if schema == nil {
 		return s, nil
 	}
@@ -90,7 +102,7 @@ func parseEnumOld(val string, s *spec.SimpleSchema) []any {
 	interfaceSlice := make([]any, len(list))
 	for i, d := range list {
 		d = strings.TrimSpace(d)
-		v, err := parseValueFromSchema(d, s)
+		v, err := ParseValueFromSchema(d, s)
 		if err != nil {
 			interfaceSlice[i] = d
 			continue
@@ -102,7 +114,7 @@ func parseEnumOld(val string, s *spec.SimpleSchema) []any {
 }
 
 func ParseEnum(val string, s *spec.SimpleSchema) []any {
-	// obtain the raw elements of the list to latter process them with the parseValueFromSchema
+	// obtain the raw elements of the list to latter process them with the ParseValueFromSchema
 	var rawElements []json.RawMessage
 	if err := json.Unmarshal([]byte(val), &rawElements); err != nil {
 		log.Print("WARNING: item list for enum is not a valid JSON array, using the old deprecated format")
@@ -117,7 +129,7 @@ func ParseEnum(val string, s *spec.SimpleSchema) []any {
 			ds = string(d)
 		}
 
-		v, err := parseValueFromSchema(ds, s)
+		v, err := ParseValueFromSchema(ds, s)
 		if err != nil {
 			interfaceSlice[i] = ds
 			continue

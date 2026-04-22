@@ -14,11 +14,11 @@ the v2 grammar parser.
 | `maximum` | `max` | `number` | param, header, schema, items |
 | `minimum` | `min` | `number` | param, header, schema, items |
 | `multipleOf` | `multiple of`, `multiple-of` | `number` | param, header, schema, items |
-| `maxLength` | `max length`, `max-length`, `maxLen`, `max len`, `max-len` | `integer` | param, header, schema, items |
-| `minLength` | `min length`, `min-length`, `minLen`, `min len`, `min-len` | `integer` | param, header, schema, items |
+| `maxLength` | `max length`, `max-length`, `maxLen`, `max len`, `max-len`, `maximum length`, `maximum-length`, `maximumLength`, `maximum len`, `maximum-len` | `integer` | param, header, schema, items |
+| `minLength` | `min length`, `min-length`, `minLen`, `min len`, `min-len`, `minimum length`, `minimum-length`, `minimumLength`, `minimum len`, `minimum-len` | `integer` | param, header, schema, items |
 | `pattern` | — | `string` | param, header, schema, items |
-| `maxItems` | `max items`, `max-items`, `max.items` | `integer` | param, header, schema, items |
-| `minItems` | `min items`, `min-items`, `min.items` | `integer` | param, header, schema, items |
+| `maxItems` | `max items`, `max-items`, `max.items`, `maximum items`, `maximum-items`, `maximumItems` | `integer` | param, header, schema, items |
+| `minItems` | `min items`, `min-items`, `min.items`, `minimum items`, `minimum-items`, `minimumItems` | `integer` | param, header, schema, items |
 | `unique` | — | `boolean` | param, header, schema, items |
 | `collectionFormat` | `collection format`, `collection-format` | `string-enum` | param, header, items |
 | `enum` | — | `comma-list` | param, header, schema, items |
@@ -80,7 +80,7 @@ the v2 grammar parser.
 
 ### `maxLength`
 
-- **Aliases:** `max length`, `max-length`, `maxLen`, `max len`, `max-len`
+- **Aliases:** `max length`, `max-length`, `maxLen`, `max len`, `max-len`, `maximum length`, `maximum-length`, `maximumLength`, `maximum len`, `maximum-len`
 - **Value type:** `integer`
 - **Legal contexts:**
   - `param` — Maximum length of the string parameter.
@@ -90,7 +90,7 @@ the v2 grammar parser.
 
 ### `minLength`
 
-- **Aliases:** `min length`, `min-length`, `minLen`, `min len`, `min-len`
+- **Aliases:** `min length`, `min-length`, `minLen`, `min len`, `min-len`, `minimum length`, `minimum-length`, `minimumLength`, `minimum len`, `minimum-len`
 - **Value type:** `integer`
 - **Legal contexts:**
   - `param` — Minimum length of the string parameter.
@@ -109,7 +109,7 @@ the v2 grammar parser.
 
 ### `maxItems`
 
-- **Aliases:** `max items`, `max-items`, `max.items`
+- **Aliases:** `max items`, `max-items`, `max.items`, `maximum items`, `maximum-items`, `maximumItems`
 - **Value type:** `integer`
 - **Legal contexts:**
   - `param` — Maximum number of items in the parameter array.
@@ -119,7 +119,7 @@ the v2 grammar parser.
 
 ### `minItems`
 
-- **Aliases:** `min items`, `min-items`, `min.items`
+- **Aliases:** `min items`, `min-items`, `min.items`, `minimum items`, `minimum-items`, `minimumItems`
 - **Value type:** `integer`
 - **Legal contexts:**
   - `param` — Minimum number of items in the parameter array.

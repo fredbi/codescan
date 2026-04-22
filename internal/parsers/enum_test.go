@@ -67,19 +67,19 @@ func TestParseValueFromSchema(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parseValueFromSchema(tc.input, tc.schema)
+			got, err := ParseValueFromSchema(tc.input, tc.schema)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 
 	t.Run("integer parse error", func(t *testing.T) {
-		_, err := parseValueFromSchema("not-a-number", &spec.SimpleSchema{Type: "integer"})
+		_, err := ParseValueFromSchema("not-a-number", &spec.SimpleSchema{Type: "integer"})
 		require.Error(t, err)
 	})
 
 	t.Run("bool parse error", func(t *testing.T) {
-		_, err := parseValueFromSchema("maybe", &spec.SimpleSchema{Type: "bool"})
+		_, err := ParseValueFromSchema("maybe", &spec.SimpleSchema{Type: "bool"})
 		require.Error(t, err)
 	})
 }

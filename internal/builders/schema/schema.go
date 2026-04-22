@@ -117,9 +117,15 @@ func (s *Builder) interfaceJSONName(goName string) string {
 	return s.interfaceMethodMangler.ToJSONName(goName)
 }
 
-func (s *Builder) buildFromDecl(_ *scanner.EntityDecl, schema *oaispec.Schema) error {
-	// analyze doc comment for the model
-	// This includes parsing "example", "default" and other validation at the top-level declaration.
+// parseDeclDoc runs the top-level declaration's comment through the
+// configured parser path (grammar bridge when UseGrammarParser is set,
+// legacy SectionedParser otherwise) and reports whether the type
+// carries a swagger:ignore that should short-circuit the rest of
+// buildFromDecl.
+func (s *Builder) parseDeclDoc(schema *oaispec.Schema) (ignored bool, err error) {
+	if s.ctx.UseGrammarParser() {
+		return s.applyBlockToDecl(schema), nil
+	}
 	sp := s.createParser("", schema, schema, nil,
 		parsers.WithSetTitle(func(lines []string) { schema.Title = parsers.JoinDropLast(lines) }),
 		parsers.WithSetDescription(func(lines []string) {
@@ -130,13 +136,20 @@ func (s *Builder) buildFromDecl(_ *scanner.EntityDecl, schema *oaispec.Schema) e
 			}
 		}),
 	)
-
 	if err := sp.Parse(s.decl.Comments); err != nil {
+		return false, err
+	}
+	return sp.Ignored(), nil
+}
+
+func (s *Builder) buildFromDecl(_ *scanner.EntityDecl, schema *oaispec.Schema) error {
+	// analyze doc comment for the model
+	// This includes parsing "example", "default" and other validation at the top-level declaration.
+	ignored, err := s.parseDeclDoc(schema)
+	if err != nil {
 		return err
 	}
-
-	// if the type is marked to ignore, just return
-	if sp.Ignored() {
+	if ignored {
 		return nil
 	}
 
@@ -727,11 +740,14 @@ func (s *Builder) processAnonInterfaceMethod(fld *types.Func, it *types.Interfac
 		ps.Items = nil
 	}
 
-	sp := s.createParser(name, schema, &ps, afld)
-	if err := sp.Parse(afld.Doc); err != nil {
-		return err
+	if s.ctx.UseGrammarParser() {
+		s.applyBlockToField(afld, schema, &ps, name)
+	} else {
+		sp := s.createParser(name, schema, &ps, afld)
+		if err := sp.Parse(afld.Doc); err != nil {
+			return err
+		}
 	}
-	s.applyItemsBridge(afld, &ps)
 
 	if ps.Ref.String() == "" && name != fld.Name() {
 		ps.AddExtension("x-go-name", fld.Name())
@@ -956,11 +972,14 @@ func (s *Builder) processInterfaceMethod(fld *types.Func, it *types.Interface, d
 		ps.Items = nil
 	}
 
-	sp := s.createParser(name, tgt, &ps, afld)
-	if err := sp.Parse(afld.Doc); err != nil {
-		return err
+	if s.ctx.UseGrammarParser() {
+		s.applyBlockToField(afld, tgt, &ps, name)
+	} else {
+		sp := s.createParser(name, tgt, &ps, afld)
+		if err := sp.Parse(afld.Doc); err != nil {
+			return err
+		}
 	}
-	s.applyItemsBridge(afld, &ps)
 
 	if ps.Ref.String() == "" && name != fld.Name() {
 		ps.AddExtension("x-go-name", fld.Name())
@@ -1213,11 +1232,14 @@ func (s *Builder) processStructField(fld *types.Var, decl *scanner.EntityDecl, t
 		ps.Items = nil
 	}
 
-	sp := s.createParser(name, tgt, &ps, afld)
-	if err := sp.Parse(afld.Doc); err != nil {
-		return err
+	if s.ctx.UseGrammarParser() {
+		s.applyBlockToField(afld, tgt, &ps, name)
+	} else {
+		sp := s.createParser(name, tgt, &ps, afld)
+		if err := sp.Parse(afld.Doc); err != nil {
+			return err
+		}
 	}
-	s.applyItemsBridge(afld, &ps)
 
 	if ps.Ref.String() == "" && name != fld.Name() {
 		resolvers.AddExtension(&ps.VendorExtensible, "x-go-name", fld.Name(), s.ctx.SkipExtensions())

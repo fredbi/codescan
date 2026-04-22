@@ -50,7 +50,8 @@ var keywords = []Keyword{
 	// --- string-length validations ---
 
 	keyword("maxLength",
-		aka("max length", "max-length", "maxLen", "max len", "max-len"),
+		aka("max length", "max-length", "maxLen", "max len", "max-len",
+			"maximum length", "maximum-length", "maximumLength", "maximum len", "maximum-len"),
 		asInteger(),
 		inParam("Maximum length of the string parameter."),
 		inHeader("Maximum length of the header."),
@@ -58,7 +59,8 @@ var keywords = []Keyword{
 		inItems("Maximum length of each string item."),
 	),
 	keyword("minLength",
-		aka("min length", "min-length", "minLen", "min len", "min-len"),
+		aka("min length", "min-length", "minLen", "min len", "min-len",
+			"minimum length", "minimum-length", "minimumLength", "minimum len", "minimum-len"),
 		asInteger(),
 		inParam("Minimum length of the string parameter."),
 		inHeader("Minimum length of the header."),
@@ -76,7 +78,8 @@ var keywords = []Keyword{
 	// --- array validations ---
 
 	keyword("maxItems",
-		aka("max items", "max-items", "max.items"),
+		aka("max items", "max-items", "max.items",
+			"maximum items", "maximum-items", "maximumItems"),
 		asInteger(),
 		inParam("Maximum number of items in the parameter array."),
 		inHeader("Maximum number of items in the header array."),
@@ -84,7 +87,8 @@ var keywords = []Keyword{
 		inItems("Maximum number of items at this nesting level."),
 	),
 	keyword("minItems",
-		aka("min items", "min-items", "min.items"),
+		aka("min items", "min-items", "min.items",
+			"minimum items", "minimum-items", "minimumItems"),
 		asInteger(),
 		inParam("Minimum number of items in the parameter array."),
 		inHeader("Minimum number of items in the header array."),

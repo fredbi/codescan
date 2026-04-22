@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+// CollectScannerTitleDescription splits header lines (free-form prose
+// appearing before the first recognized tag in a comment block) into
+// title and description slices, following the legacy SectionedParser
+// heuristics: a blank-line separator splits after cleanup; absent
+// that, a first line ending in punctuation or matching a markdown
+// heading prefix is promoted to title; otherwise everything is
+// description.
+//
+// Exposed for grammar-side bridges that reuse the same split over
+// grammar.Block.ProseLines().
+func CollectScannerTitleDescription(headers []string) (title, desc []string) {
+	return collectScannerTitleDescription(headers)
+}
+
 // a shared function that can be used to split given headers
 // into a title and description.
 func collectScannerTitleDescription(headers []string) (title, desc []string) {

@@ -423,13 +423,16 @@ func firstArg(args []string) string {
 
 // parseTitleDesc extracts the title (first paragraph) and description
 // (remaining paragraphs, joined by blank lines) from the tokens that
-// appear before the annotation.
+// appear before the annotation. It also accumulates the raw prose
+// lines (source-order, with blank separators preserved) so consumers
+// can reproduce v1's SectionedParser.header — see baseBlock.ProseLines.
 //
 // Keyword/YAML/block-head tokens appearing pre-annotation are unusual
 // but not fatal — they are ignored with no diagnostic for v1 parity.
 func (p *parseState) parseTitleDesc(base *baseBlock, pre []Token) {
 	var paragraphs []string
 	var current []string
+	var proseLines []string
 
 	flush := func() {
 		if len(current) > 0 {
@@ -442,8 +445,10 @@ func (p *parseState) parseTitleDesc(base *baseBlock, pre []Token) {
 		switch t.Kind {
 		case TokenBlank:
 			flush()
+			proseLines = append(proseLines, "")
 		case TokenText:
 			current = append(current, t.Text)
+			proseLines = append(proseLines, t.Text)
 		case TokenEOF,
 			TokenAnnotation,
 			TokenKeywordValue, TokenKeywordBlockHead,
@@ -454,6 +459,8 @@ func (p *parseState) parseTitleDesc(base *baseBlock, pre []Token) {
 		}
 	}
 	flush()
+
+	base.proseLines = proseLines
 
 	if len(paragraphs) > 0 {
 		base.title = paragraphs[0]

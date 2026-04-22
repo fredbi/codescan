@@ -524,7 +524,7 @@ func (sd *SetDefault) Parse(lines []string) error {
 
 	matches := sd.rx.FindStringSubmatch(lines[0])
 	if len(matches) > 1 && len(matches[1]) > 0 {
-		d, err := parseValueFromSchema(matches[1], sd.scheme)
+		d, err := ParseValueFromSchema(matches[1], sd.scheme)
 		if err != nil {
 			return err
 		}
@@ -564,7 +564,7 @@ func (se *SetExample) Parse(lines []string) error {
 
 	matches := se.rx.FindStringSubmatch(lines[0])
 	if len(matches) > 1 && len(matches[1]) > 0 {
-		d, err := parseValueFromSchema(matches[1], se.scheme)
+		d, err := ParseValueFromSchema(matches[1], se.scheme)
 		if err != nil {
 			return err
 		}

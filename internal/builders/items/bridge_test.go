@@ -18,10 +18,11 @@ import (
 // MockValidationBuilder, runs ApplyBlock, and inspects the
 // recorded calls.
 
-// parseBodyToBlock returns the package's polymorphic grammar.Block API; the
-// ireturn lint is suppressed for the same reason as grammar.Parser.ParseAs.
+// parseBodyToBlock returns the package's polymorphic grammar.Block
+// API. Used only in tests to synthesise Block values for dispatch
+// verification.
 //
-//nolint:ireturn
+//nolint:ireturn // returning grammar.Block matches the package's polymorphic API by design
 func parseBodyToBlock(t *testing.T, body string) grammar.Block {
 	t.Helper()
 	p := grammar.NewParser(token.NewFileSet())

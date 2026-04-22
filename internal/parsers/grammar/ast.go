@@ -44,6 +44,15 @@ type Block interface {
 	// "extensions:" block inside this Block.
 	Extensions() iter.Seq[Extension]
 
+	// ProseLines returns the raw prose lines that appeared before the
+	// first structured token (annotation, keyword, YAML fence, …), in
+	// source order. Blank lines appear as empty strings so consumers
+	// can reproduce v1's SectionedParser.header — which is
+	// line-preserving rather than paragraph-joined. Independent of
+	// Title()/Description(), which apply paragraph-joining for a
+	// cleaner rendered view.
+	ProseLines() []string
+
 	// Kind returns the top-level annotation kind this Block was
 	// dispatched from (UnboundBlock returns AnnUnknown). Used by
 	// analyzers to type-switch-check without reflection.
@@ -256,6 +265,7 @@ type baseBlock struct {
 	pos         token.Position
 	title       string
 	description string
+	proseLines  []string
 	kind        AnnotationKind
 
 	properties  []Property
@@ -267,6 +277,7 @@ type baseBlock struct {
 func (b *baseBlock) Pos() token.Position            { return b.pos }
 func (b *baseBlock) Title() string                  { return b.title }
 func (b *baseBlock) Description() string            { return b.description }
+func (b *baseBlock) ProseLines() []string           { return b.proseLines }
 func (b *baseBlock) Diagnostics() []Diagnostic      { return b.diagnostics }
 func (b *baseBlock) AnnotationKind() AnnotationKind { return b.kind }
 
