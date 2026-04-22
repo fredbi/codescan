@@ -113,8 +113,12 @@ type Root struct{}
 	if prop.Keyword.Name != "extensions" {
 		t.Fatalf("keyword: got %q", prop.Keyword.Name)
 	}
-	if len(prop.Body) != 1 || prop.Body[0] != "x-foo: bar" {
-		t.Errorf("Body: got %q want [x-foo: bar]", prop.Body)
+	// Extensions bodies preserve source indentation in Property.Body
+	// so nested YAML-like extension maps can be re-parsed downstream.
+	// The extracted Extension entries (block.Extensions()) are the
+	// cleaned form.
+	if len(prop.Body) != 1 || prop.Body[0] != "  x-foo: bar" {
+		t.Errorf("Body: got %q want [  x-foo: bar]", prop.Body)
 	}
 
 	extCount := 0

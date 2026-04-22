@@ -531,6 +531,18 @@ func (p *parseState) parseBody(base *baseBlock, post []Token) {
 // top-level Extension on the Block so `block.Extensions()` exposes
 // them uniformly. The original Body is still populated.
 //
+// Raw-block absorption: when the head's ValueType is RawBlock
+// (consumes/produces/security/parameters/responses/extensions at a
+// route or operation level), scalar keyword-shaped body lines
+// (RawValue-typed keywords like `default:` or `example:`) are
+// absorbed as body text rather than treated as terminators. Mirrors
+// v1's SectionedParser behavior: without a registered top-level
+// tagger for `default`, `example`, etc., those lines fall through
+// into the currently-active multi-line tagger's body. Terminators
+// (other block heads, single-line route-structural keywords like
+// `schemes:` with ValueType = CommaList, and `deprecated:` Boolean)
+// still stop collection.
+//
 // Returns the index past the last body token consumed.
 func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int {
 	head := post[i]
@@ -542,6 +554,7 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 	i++
 
 	isExtensions := isExtensionBlock(head.Keyword.Name)
+	isRawBlock := head.Keyword.Value.Type == ValueRawBlock
 
 	var pendingBlanks int
 	for i < len(post) {
@@ -549,25 +562,17 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 		switch next.Kind {
 		case TokenEOF,
 			TokenAnnotation,
-			TokenKeywordValue, TokenKeywordBlockHead,
+			TokenKeywordBlockHead,
 			TokenYAMLFence, TokenRawLine:
 			base.properties = append(base.properties, prop)
 			return i
+		case TokenKeywordValue:
+			if absorbed := p.absorbRawBlockKeyword(&prop, next, isRawBlock, &pendingBlanks); !absorbed {
+				base.properties = append(base.properties, prop)
+				return i
+			}
 		case TokenText:
-			for range pendingBlanks {
-				prop.Body = append(prop.Body, "")
-			}
-			pendingBlanks = 0
-			prop.Body = append(prop.Body, next.Text)
-			if isExtensions {
-				if ext, ok := parseExtensionLine(next); ok {
-					if !isExtensionName(ext.Name) {
-						p.emit(Warnf(ext.Pos, CodeInvalidExtension,
-							"extension name %q must begin with 'x-' or 'X-'", ext.Name))
-					}
-					base.extensions = append(base.extensions, ext)
-				}
-			}
+			p.appendRawBlockText(base, &prop, next, isExtensions, &pendingBlanks)
 		case TokenBlank:
 			// Defer — include only if more text follows within the
 			// block. Trailing blanks are dropped.
@@ -584,10 +589,91 @@ func (p *parseState) collectBlockBody(base *baseBlock, post []Token, i int) int 
 	return i
 }
 
+// absorbRawBlockKeyword handles a TokenKeywordValue encountered
+// inside a RawBlock body. Returns true iff the token was absorbed as
+// body text (mirroring v1's tagger-based collection where sub-
+// context keywords like `default:` / `in:` / `max:` fall through
+// into the active multi-line tagger's body). Returns false when the
+// token is a legitimate sibling terminator (route/operation/meta
+// structural keyword) that should end the block.
+func (p *parseState) absorbRawBlockKeyword(prop *Property, next Token, isRawBlock bool, pendingBlanks *int) bool {
+	if !isRawBlock || next.Keyword == nil || isRouteStructuralKeyword(next.Keyword) {
+		return false
+	}
+	for range *pendingBlanks {
+		prop.Body = append(prop.Body, "")
+	}
+	*pendingBlanks = 0
+	name := next.SourceName
+	if name == "" {
+		name = next.Keyword.Name
+	}
+	prop.Body = append(prop.Body, name+": "+next.Value)
+	return true
+}
+
+// appendRawBlockText accumulates a TokenText line into prop.Body,
+// using the indentation-preserving Raw form for extensions bodies
+// (where nested YAML-like maps rely on source indentation) and the
+// cleaned Text form for other raw-block bodies. When the head is an
+// extensions block, the line is also parsed into an Extension entry
+// for the block-level accessor.
+func (p *parseState) appendRawBlockText(base *baseBlock, prop *Property, next Token, isExtensions bool, pendingBlanks *int) {
+	for range *pendingBlanks {
+		prop.Body = append(prop.Body, "")
+	}
+	*pendingBlanks = 0
+	body := next.Text
+	if isExtensions && next.Raw != "" {
+		body = next.Raw
+	}
+	prop.Body = append(prop.Body, body)
+	if !isExtensions {
+		return
+	}
+	ext, ok := parseExtensionLine(next)
+	if !ok {
+		return
+	}
+	if !isExtensionName(ext.Name) {
+		p.emit(Warnf(ext.Pos, CodeInvalidExtension,
+			"extension name %q must begin with 'x-' or 'X-'", ext.Name))
+	}
+	base.extensions = append(base.extensions, ext)
+}
+
 // isExtensionBlock reports whether the given keyword name declares an
 // extensions block (i.e., `extensions:` or `infoExtensions:`).
 func isExtensionBlock(name string) bool {
 	return name == "extensions" || name == "infoExtensions"
+}
+
+// isRouteStructuralKeyword reports whether kw is a top-level
+// keyword at the route/operation/meta annotation level — the set
+// that v1's SectionedParser registers as taggers at those
+// annotations and that terminates the currently-active multi-line
+// tagger's body. A keyword qualifies if any of its declared contexts
+// is KindRoute, KindOperation, or KindMeta.
+//
+// Used by collectBlockBody to decide, in a RawBlock body, whether an
+// incoming TokenKeywordValue is a sibling top-level tag (terminate)
+// or a sub-context keyword (`in:`, `required:`, `default:`) that
+// legitimately appears as body text inside `Parameters:` /
+// `Responses:` block entries.
+func isRouteStructuralKeyword(kw *Keyword) bool {
+	for _, ctx := range kw.Contexts {
+		switch ctx.Kind {
+		case KindRoute, KindOperation, KindMeta:
+			return true
+		case KindParam, KindSchema, KindHeader, KindItems, KindResponse:
+			// Sub-contexts — keep scanning; a keyword can have
+			// multiple contexts and any route/operation/meta match
+			// wins.
+		default:
+			// Unknown/future kinds: conservative — don't terminate.
+		}
+	}
+	return false
 }
 
 // isExtensionName reports whether s is a well-formed OpenAPI vendor

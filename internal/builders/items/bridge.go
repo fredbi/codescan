@@ -4,6 +4,8 @@
 package items
 
 import (
+	"strings"
+
 	"github.com/go-openapi/codescan/internal/ifaces"
 	"github.com/go-openapi/codescan/internal/parsers/grammar"
 )
@@ -90,9 +92,17 @@ func dispatchItemsKeyword(p grammar.Property, t ifaces.ValidationBuilder) {
 		// items.Validations does not (per survey). Type-assertion
 		// guard silently drops the value for items-only targets,
 		// matching v1's tagger table structure.
+		//
+		// Falls back to the raw value when grammar's strict
+		// StringEnum rejects the input — v1 accepts any string
+		// (e.g. the typo `pipe` for `pipes`) and stores verbatim.
 		if ov, ok := t.(ifaces.OperationValidationBuilder); ok {
-			if p.Typed.Type == grammar.ValueStringEnum {
-				ov.SetCollectionFormat(p.Typed.String)
+			val := p.Typed.String
+			if val == "" {
+				val = strings.TrimSpace(p.Value)
+			}
+			if val != "" {
+				ov.SetCollectionFormat(val)
 			}
 		}
 	case "enum":

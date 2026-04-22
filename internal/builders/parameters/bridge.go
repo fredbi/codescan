@@ -5,6 +5,7 @@ package parameters
 
 import (
 	"go/ast"
+	"strings"
 
 	"github.com/go-openapi/codescan/internal/builders/items"
 	"github.com/go-openapi/codescan/internal/parsers"
@@ -209,8 +210,12 @@ func dispatchParamFlags(p grammar.Property, param *oaispec.Parameter, valid para
 			param.Required = p.Typed.Boolean
 		}
 	case "collectionFormat":
-		if p.Typed.Type == grammar.ValueStringEnum {
-			valid.SetCollectionFormat(p.Typed.String)
+		val := p.Typed.String
+		if val == "" {
+			val = strings.TrimSpace(p.Value)
+		}
+		if val != "" {
+			valid.SetCollectionFormat(val)
 		}
 	}
 }

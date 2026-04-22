@@ -54,7 +54,9 @@ func (k TokenKind) String() string {
 //   - TokenAnnotation: Text = annotation name (e.g., "model"), Args = positional args.
 //   - TokenKeywordValue / TokenKeywordBlockHead: Text = canonical keyword name,
 //     Keyword = table entry, Value = raw value string (empty for BlockHead),
-//     ItemsDepth = number of leading "items." prefixes (0 = none).
+//     ItemsDepth = number of leading "items." prefixes (0 = none),
+//     SourceName = the keyword name as it appeared in source (may be
+//     an alias like "max" for canonical "maximum").
 //   - TokenText: Text = original line content.
 //   - TokenBlank / TokenYAMLFence / TokenEOF: Text is empty.
 //
@@ -69,6 +71,14 @@ type Token struct {
 	Keyword    *Keyword
 	ItemsDepth int
 	Args       []string
+	SourceName string
+	// Raw is the source line with only the comment markers (`//` /
+	// `/*`) stripped — internal whitespace, indentation, and list
+	// markers are preserved. Populated for TokenText and TokenRawLine,
+	// empty otherwise. Consumers that need YAML-style indentation or
+	// list-marker fidelity (notably the extensions body parser) read
+	// Raw; Text is the cleaned form suitable for regex dispatch.
+	Raw string
 }
 
 // Lex turns a preprocessed line slice into a token stream terminated
@@ -122,7 +132,7 @@ func lexLine(line Line, inFence bool) Token {
 	if tok, ok := lexKeyword(text, line.Pos); ok {
 		return tok
 	}
-	return Token{Kind: TokenText, Text: text, Pos: line.Pos}
+	return Token{Kind: TokenText, Text: text, Raw: line.Raw, Pos: line.Pos}
 }
 
 // matchGodocRoutePrefix returns the byte offset of "swagger:route"
@@ -235,6 +245,7 @@ func lexKeyword(text string, pos token.Position) (Token, bool) {
 		Value:      value,
 		Keyword:    &kw,
 		ItemsDepth: depth,
+		SourceName: name,
 	}, true
 }
 

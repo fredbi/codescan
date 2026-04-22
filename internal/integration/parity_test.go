@@ -82,6 +82,9 @@ var parityFixtures = []parityFixture{
 	{"Bookings", codescan.Options{Packages: pkgs("./goparsing/bookings/..."), ScanModels: true}},
 	// Exercises swagger:operation (YAML-bodied operation spec).
 	{"ClassificationOpAnnotation", codescan.Options{Packages: pkgs("./goparsing/classification/operations_annotation/...")}},
+	// Exercises swagger:route with rich bodies: Consumes / Produces / Schemes /
+	// Security / Parameters / Responses / Extensions.
+	{"ClassificationRoutes", codescan.Options{Packages: pkgs("./goparsing/classification/...")}},
 }
 
 // pkgs is a tiny alias for []string — it makes the fixture table

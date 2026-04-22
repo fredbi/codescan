@@ -5,6 +5,7 @@ package responses
 
 import (
 	"go/ast"
+	"strings"
 
 	"github.com/go-openapi/codescan/internal/builders/items"
 	"github.com/go-openapi/codescan/internal/parsers"
@@ -183,6 +184,11 @@ func dispatchStringOrEnum(p grammar.Property, valid headerValidations, scheme *o
 // dispatchHeaderFlags handles unique/collectionFormat — the boolean
 // and string-enum keywords that target the header. Headers have no
 // required / readOnly / discriminator.
+//
+// collectionFormat falls back to the raw value when grammar's strict
+// StringEnum validation rejects the input; v1 accepts any string and
+// stores it verbatim, so e.g. a fixture using `collection format:
+// pipe` (typo for `pipes`) still round-trips for parity.
 func dispatchHeaderFlags(p grammar.Property, valid headerValidations) {
 	switch p.Keyword.Name {
 	case "unique":
@@ -190,8 +196,12 @@ func dispatchHeaderFlags(p grammar.Property, valid headerValidations) {
 			valid.SetUnique(p.Typed.Boolean)
 		}
 	case "collectionFormat":
-		if p.Typed.Type == grammar.ValueStringEnum {
-			valid.SetCollectionFormat(p.Typed.String)
+		val := p.Typed.String
+		if val == "" {
+			val = strings.TrimSpace(p.Value)
+		}
+		if val != "" {
+			valid.SetCollectionFormat(val)
 		}
 	}
 }
