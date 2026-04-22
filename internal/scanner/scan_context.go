@@ -105,6 +105,19 @@ func (s *ScanCtx) UseGrammarParser() bool {
 	return s.opts.UseGrammarParser
 }
 
+// FileSet returns the shared *token.FileSet used by the scan's
+// loaded packages. Needed by callers that construct a
+// grammar.Parser for comment groups that don't live under a single
+// EntityDecl's *packages.Package — notably operation and route
+// path-level annotations whose source is aggregated from multiple
+// packages.
+func (s *ScanCtx) FileSet() *token.FileSet {
+	if len(s.pkgs) == 0 {
+		return nil
+	}
+	return s.pkgs[0].Fset
+}
+
 func (s *ScanCtx) Debug() bool {
 	return s.debug
 }
