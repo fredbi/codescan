@@ -1,0 +1,103 @@
+%%{ init: { "theme": "default" } }%%
+graph TD
+    subgraph application.go
+        Options
+        scanCtx
+        typeIndex
+        entityDecl
+        node
+        metaSection
+    end
+
+    subgraph spec.go
+        specBuilder
+    end
+
+    subgraph operations.go
+        operationsBuilder
+        parsedPathContent
+    end
+
+    subgraph routes.go
+        routesBuilder
+    end
+
+    subgraph schema.go
+        schemaBuilder
+        schemaTypable
+        schemaValidations
+    end
+
+    subgraph parameters.go
+        parameterBuilder
+        paramTypable
+        paramValidations
+        itemsTypable
+        itemsValidations
+    end
+
+    subgraph responses.go
+        responseBuilder
+        responseTypable
+        headerValidations
+    end
+
+    subgraph parser.go
+        sectionedParser
+        tagParser
+        valueParser
+        validationBuilder
+        operationValidationBuilder
+        swaggerTypable
+        yamlParser
+        yamlSpecScanner
+        setOpResponses
+    end
+
+    subgraph route_params.go
+        setOpParams
+    end
+
+    %% --- Core hub: scanCtx <-> typeIndex ---
+    scanCtx -->|"contains"| typeIndex
+    typeIndex -->|"stores"| entityDecl
+    typeIndex -->|"stores"| metaSection
+    typeIndex -->|"stores"| parsedPathContent
+
+    %% --- specBuilder orchestrates everything ---
+    specBuilder -->|"uses"| scanCtx
+    specBuilder -->|"uses"| entityDecl
+
+    %% --- Builders all depend on scanCtx + entityDecl ---
+    schemaBuilder -->|"uses"| scanCtx
+    schemaBuilder -->|"uses"| entityDecl
+    parameterBuilder -->|"uses"| scanCtx
+    parameterBuilder -->|"uses"| entityDecl
+    responseBuilder -->|"uses"| scanCtx
+    responseBuilder -->|"uses"| entityDecl
+    operationsBuilder -->|"uses"| scanCtx
+    operationsBuilder -->|"uses"| parsedPathContent
+    routesBuilder -->|"uses"| scanCtx
+    routesBuilder -->|"uses"| parsedPathContent
+
+    %% --- Builder cross-dependencies (via method calls) ---
+    schemaBuilder -.->|"creates"| sectionedParser
+    parameterBuilder -.->|"creates"| sectionedParser
+    responseBuilder -.->|"creates"| sectionedParser
+    specBuilder -.->|"creates"| schemaBuilder
+    specBuilder -.->|"creates"| parameterBuilder
+    specBuilder -.->|"creates"| responseBuilder
+    specBuilder -.->|"creates"| operationsBuilder
+    specBuilder -.->|"creates"| routesBuilder
+    routesBuilder -.->|"creates"| operationsBuilder
+
+    %% --- Parser internals ---
+    sectionedParser -->|"contains"| tagParser
+    tagParser -->|"wraps"| valueParser
+    operationValidationBuilder -->|"extends"| validationBuilder
+
+    %% --- Typable interfaces (schema/param/response) ---
+    schemaTypable -.->|"implements"| swaggerTypable
+    paramTypable -.->|"implements"| swaggerTypable
+    responseTypable -.->|"implements"| swaggerTypable
+    itemsTypable -.->|"implements"| swaggerTypable
