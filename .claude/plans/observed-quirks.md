@@ -323,9 +323,12 @@ non-camelCase user input:
 `fixtures/enhancements/interface-name-verbatim/` +
 `integration/coverage_interface_name_verbatim_test.go`.
 
-**One-size-fits-all alleviation deferred** to a future opt-out
-(`SkipJSONifyInterfaceMethods` global option) tracked in
-`.claude/plans/forthcoming-features.md` §3.3.
+**One-size-fits-all alleviation shipped** as the `SkipJSONifyInterfaceMethods`
+global opt-out (v0.36, `54cf1fd`): when set, `methodCarrier` emits the Go method
+name verbatim instead of running the mangler; `swagger:name` still wins. On/off
+contract pinned by `fixtures/enhancements/interface-no-mangle/` +
+`integration/coverage_skip_jsonify_interface_test.go`. See
+`.claude/plans/features/skip-jsonify-interfaces.md`.
 
 **Status:** RESOLVED. Asymmetry documented in
 `internal/builders/schema/README.md` §method-mangler.

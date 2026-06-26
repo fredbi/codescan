@@ -1,9 +1,10 @@
 # Cross-ref linkage — build plan
 
-Status: ⬜ ready to build. Implements the settled design in
+Status: 🔶 in progress. Implements the settled design in
 [`genspec-tui-linkage.md`](genspec-tui-linkage.md) (🟢 rev 9). Multi-phase, spans
 two modules (codescan library + `cmd/genspec-tui`). Legend: ⬜ todo · 🔶 in
-progress · ✅ done.
+progress · ✅ done. **Phase A ✅, Phase B ✅ (all anchor kinds) — Phase C (the
+join) is next, the first user-visible payoff.**
 
 ## Scope
 
@@ -64,7 +65,7 @@ build breaks (the experiment is required to compile `ux` now).**
 
 ---
 
-## Phase B — source-side provenance (`LX-prov-0`, codescan)
+## Phase B — source-side provenance (`LX-prov-0`, codescan) — ✅ COMPLETE
 
 - ✅ **B0 — `Provenance` type + option (decision D2).** `internal/scanner/
   provenance.go`: `Provenance{Pointer, Pos}` + `JSONPointer(...)` helper;
@@ -78,57 +79,127 @@ build breaks (the experiment is required to compile `ux` now).**
 - ✅ **B2 — pointer helper.** `scanner.JSONPointer(segments...)` — RFC 6901
   escaping matching the spec-side jsontext output (verified by the matching enum
   fixture pointer in the LX-spec-0 tests).
-- 🔶 **B3 — wire anchor sites** (record from the insertion site where the
+- ✅ **B3 — wire anchor sites** (record from the insertion site where the
   *absolute* pointer is known):
   - ✅ definitions → `spec.go` `buildDiscoveredSchema`: `/definitions/{name}` ←
     `decl.Ident.Pos()`, and `schema.WithPath("/definitions/{name}")` passed in.
-  - ✅ properties (first-level) → `schema/fields.go` `applyFieldCarrier`:
-    `s.path + /properties/{json}` ← `c.afld.Pos()`, gated on `WithPath` set.
-  - ⬜ responses → `responses/responses.go`; `/responses/{name}` (unambiguous).
-  - ⬜ paths/operations → `routes.go`/`operations.go`; `/paths/{path~esc}/{method}` (grammar block `Pos()`, coarse §3.5).
-  - ⬜ parameters → `/paths/{path~esc}/{method}/parameters/{i}`.
-  - ⬜ enum values → `…/enum/{i}` ← const position.
-  - ⬜ `swagger:meta` → `/info` (children resolve upward), meta block `Pos()`.
-- 🔶 **B4 — tests.** ✅ `coverage_provenance_test.go`: `/definitions/User`
-  pointer+position, and opt-in (off → nothing, spec unchanged). More assertions
-  land with each anchor.
+  - ✅ properties (all depths) → `schema/fields.go` `applyFieldCarrier`:
+    `fieldPath` ← `c.afld.Pos()`, gated on `WithPath` set. Interface methods
+    share the same path (they route through `applyFieldCarrier`).
+  - ✅ responses → `spec.go` `buildResponses`: `/responses/{name}` ←
+    `decl.Ident.Pos()` (top-level `swagger:response`).
+  - ✅ paths/operations → `routes.go` + `operations.go`:
+    `/paths/{path~esc}/{method}` ← `ParsedPathContent.Pos` (a new coarse field =
+    matched annotation comment's `Slash`, §3.5).
+  - ✅ parameters → `/paths/{path~esc}/{method}/parameters/{i}`, **deferred pass**
+    (`spec.go` `emitParameterAnchors`): parameters build before their op is bound
+    to a path and before the array index is final, so the parameters builder only
+    captures `(opid → name → pos)` via `ScanCtx.RecordParamOrigin`; the absolute
+    pointer is assembled from the finished paths tree.
+  - ✅ enum values → `…/enum/{i}` ← const ident position. `FindEnumValues` now
+    returns parallel positions; emitted in `walker_classifiers.go`
+    `classifierNamedBasic`. **Fires on the common enum-on-field case** (the path
+    is *advanced* to the field/items node — see threading note); standalone
+    `swagger:enum` definitions are vanishingly rare (the const-enum type always
+    inlines onto its referencing field — verified empirically).
+  - ✅ `swagger:meta` → `/info` ← meta block `cg.Pos()` (`spec.go` `buildMeta`).
+- ✅ **B5 — keyword-line granularity (post-Phase-B extension).** Beyond the
+  node-level anchors above, each *scalar keyword* now anchors to its own
+  `// keyword: …` comment line (so following e.g. a `maximum`/`default`/`host`
+  node lands on the annotation, not the enclosing field/block). Same mechanism
+  everywhere — walk the grammar `Property` stream (each carries `.Pos` +
+  `ItemsDepth`), map keyword→pointer-segment, emit:
+  - schema validations → `schema/walker.go` `recordValidationOrigins` (curated
+    set: maximum/minimum/multipleOf/max·minLength/pattern/max·minItems/
+    uniqueItems/default/example/enum/readOnly; `base + (/items)×ItemsDepth + seg`).
+  - meta keywords → `spec.go` `recordMetaOrigins` (Info.* under `/info`, the rest
+    at root — the root-level fields had **no** ancestor anchor before).
+  - route-header keywords → `routes/walker.go` `recordRouteKeywordOrigin`
+    (schemes/deprecated/consumes/produces under `/paths/{p}/{m}/{seg}`).
+  - **Deliberately NOT covered:** `required` (parent array), `$ref`-with-siblings
+    overrides (rewritten to allOf), parameter/header validations (different
+    builder), and **swagger:operation** keywords (body is one wholesale-
+    unmarshaled YAML block — no per-keyword `Property`; would need a `yaml.Node`
+    walk; Fred: leave at the coarse `/paths/{p}/{m}` anchor). All resolve to their
+    field/block anchor — still correct under anchors-only.
+- ✅ **B4 — tests.** `coverage_provenance_test.go`:
+  - `TestCoverage_ProvenanceDefinitions` — simplest models-only case.
+  - `TestCoverage_ProvenanceGeometry` — **the anchors-only safety invariant**:
+    every emitted pointer must resolve to an existing node in the rendered spec
+    (pure-stdlib RFC 6901 resolver), run across allOf / embed / interface /
+    nested / slice / map / petstore fixtures. Mutation-tested (removing a clear
+    surfaces dangling allOf anchors).
+  - `TestCoverage_ProvenanceAnchorKinds` — asserts ≥1 anchor of every kind
+    (definition, property, enum, response, operation, parameter, info) fires with
+    a source line, over petstore + enum-docs.
 
-**Path threading — decided (Fred): `schema.WithPath(base)`.** General, not
-definition-specific (not all pointers live under `/definitions`, and
-`RecordOrigin` isn't schema-only). Top builders *initiate* the base
-(`/definitions/User`, `/paths/.../responses/200/schema`, …); sub-builders
-**path-join** their segment (`/properties/x`, `/items`, …). Empty base = record
-nothing. Done for definitions + first-level properties; **deeper recursion
-(nested objects, `items`, `allOf` members) still threads the same `path` field
-into the recursive build calls — staged next.**
+**Path threading — UPGRADED from "clear" to "advance".** The base path (`s.path`,
+set by `schema.WithPath(base)`) now tracks the *exact pointer of the schema node
+currently being filled*: `applyFieldCarrier` advances it to the property's
+pointer for the value build (`descend`/`repath` helpers, mirroring
+`enterEmbed`); the `items` (slice/array/named-array) and `additionalProperties`
+(map) arms path-join their segment; allOf members and allOf own-property targets
+**clear** it (those subtrees aren't tracked — resolve to the nearest anchored
+ancestor). This is what lets enum-on-field, nested inline objects, and slice/map
+element fields anchor at the correct pointer instead of dangling. The geometry
+invariant test is the safety net for the whole scheme.
 
-**Increment so far:** `OnProvenance` proven end-to-end; **definitions +
-first-level properties** anchored via `WithPath`; full library suite green, lint
-clean, opt-in (nil callback = zero cost, spec byte-identical).
+**Increment:** `OnProvenance` proven end-to-end across **all anchor kinds**; full
+library suite green, lint clean (`--new-from-rev master`), opt-in (nil callback =
+zero cost, spec byte-identical — descend/repath are no-ops when `s.path == ""`).
 
 ---
 
 ## Phase C — join: linker + navigation (`LX-join-0/1`, TUI)
 
-- ⬜ **C1 — collect provenance.** In `scan.go`, set `cfg.OnProvenance`; collect
-  `[]scanner.Provenance` into `scanResultMsg`; carry to the model (as the
-  diagnostics wiring does).
-- ⬜ **C2 — source index.** Build the caller-owned structure: forward
-  `map[pointer]token.Position` (+ zero-alloc segment-trim nearest-ancestor walk)
-  and the reverse `(file,line)`-sorted slice + binary search (§3.7).
-- ⬜ **C3 — `positionLinker`.** New `linker.go` implementing `SourceLinker`
-  (and the reverse direction), replacing `naiveLinker`. Delete the name-match impl.
-- ⬜ **C4 — `f` binding + nav state.** Add `F` to the `key` enum + dispatch; a
-  `navMode` + driver-pane bit on the model; enter from the read-only viewer / spec
-  viewport, `ESC` exits (§6.6).
-- ⬜ **C5 — spec→source flow.** Cursor move in spec nav → `line2ptr` →
-  nearest-ancestor `pos` → open file, vertical-center + highlight (§6.2).
-- ⬜ **C6 — source→spec flow.** Cursor move in source nav → reverse
-  nearest-enclosing anchor → `ptr2line` → center + highlight spec node (§6.3).
-- ⬜ **C7 — visuals + edge cases.** Distinct driver/follower highlight styles;
-  status badge (`SPEC-NAV`/`CODE-NAV` + resolved target / `no source`); debounced
-  auto-follow; honest "no source" for `InputSpec` nodes; "stale" handling while
-  the buffer is dirty (§6.4–6.5).
+- ✅ **C1 — collect provenance.** `scan.go` sets `cfg.OnProvenance`, collects
+  `[]scanner.Provenance` into `scanResultMsg`; the model builds the `SourceIndex`
+  on each scan (mirrors the diagnostics wiring).
+- ✅ **C2 — source index.** `sourceindex.go`: caller-owned `SourceIndex` —
+  forward `map[pointer]token.Position` with `PositionFor` (zero-alloc segment-trim
+  nearest-ancestor) and the reverse `byFile []lineAnchor` (sorted) + `PointerAt`
+  binary search (nearest-enclosing). Unit-tested (`sourceindex_test.go`:
+  exact / nearest-ancestor / nearest-enclosing / per-file isolation / last-wins).
+- ✅ **C3 — retire `naiveLinker`.** Done (slice 6). `linkage.go` (the
+  name-matching `SourceLinker`/`naiveLinker`/`Selection`/`SpecTarget` scaffold)
+  and the dead `Spec.JumpTo` substring scan are deleted; the position-backed nav
+  goes through `SourceIndex` directly. `g` (locate a file in the spec) is
+  reimplemented exactly via `SourceIndex.FirstAnchor` → `LineForPointer` →
+  highlight+focus — unambiguous, consistent with the `f` flows. (No separate
+  `positionLinker` type was needed; the model talks to `SourceIndex`/`SpecIndex`.)
+- 🔶 **C4 — `f` binding + nav state.** ✅ **Slice 3 (read-only viewer) landed** —
+  the keystone. `FileView` is now dual-mode: a navigable, line-numbered read-only
+  viewer (highlighted nav line; `↑↓/jk`/wheel move it) + the textarea editor,
+  opt-in via `i`/Enter, left via Esc (two-level: editor → viewer → tree). Files
+  open read-only. Because the viewer no longer eats `f` for typing, **follow is
+  unified on `f`** from both panes (spec pane → source; read-only viewer →
+  spec; `ctrl+f` stays as the in-editor shortcut). ✅ **Slice 5 (auto-follow mode)
+  landed:** `f` toggles a *persistent* follow mode — the driver pane keeps focus,
+  the follower mirrors on every cursor move (`syncFollowIfActive` after each key/
+  scroll/rescan); spec-driver marks the node without re-scrolling (no fight),
+  source-driver scrolls+highlights the spec; any focus change / edit / search /
+  options exits, as do Esc and a second `f`; a `SPEC▸SOURCE`/`SOURCE▸SPEC` status
+  badge shows the live target. Model + panel tests cover toggle/drive/exit/no-node.
+  **C4 is essentially done.**
+- 🔶 **C5 — spec→source flow.** ✅ **Slice 1 landed:** `f` on the spec pane takes
+  the pointer at the top of the viewport (`SpecIndex.PointerAt`) → `SourceIndex.
+  PositionFor` (nearest-ancestor) → opens the file at that line
+  (`FileView.GotoLine`), now landing in the **read-only viewer with the source
+  line highlighted** (slice 3), status shows `→ file:line (pointer)`. ⬜
+  Spec-side highlight + vertical-centering is C7.
+- 🔶 **C6 — source→spec flow.** ✅ **Slice 2 landed:** `ctrl+f` from the file
+  editor takes the cursor's source line → `SourceIndex.PointerAt` (nearest-
+  enclosing anchor) → `SpecIndex.LineForPointer` → scrolls the spec pane there and
+  focuses it (status shows the pointer). `ctrl+f` not `f` because the editor owns
+  plain `f`. ⬜ Centering + highlight is C7. The asymmetric keys (`f` spec→source,
+  `ctrl+f` source→spec) collapse to a unified `f` once the read-only viewer lands.
+- 🔶 **C7 — visuals + edge cases.** ✅ **Slice 4 landed:** both panes now
+  highlight the linked node — the read-only viewer's nav line (source side) and
+  the spec's xref line (`theme.Selected`, whole-line), set on follow and
+  invalidated by search / new content / Esc; source→spec highlights the
+  destination, spec→source leaves a breadcrumb on the origin. ⬜ Still ahead:
+  a status badge / nav-mode indicator, honest "no source" for `InputSpec` nodes,
+  and "stale" handling while the buffer is dirty.
 - ⬜ **C8 — tests.** Linker unit tests (nearest-ancestor; reverse nearest-
   enclosing; no-source). Model-level: a synthesized scan → assert the follower
   target line for a given driver line, both directions.

@@ -21,21 +21,96 @@ shaping · ⏸ paused.
 
 ---
 
-## One-glance overview
+## Overview — streams & features
 
-| #  | Stream                          | Status | Public-facing? | Cross-refs |
-|----|---------------------------------|--------|----------------|------------|
-| 1  | Disentanglement (sub-packages)  | ✅    | yes (refactor) | merged; see `.claude/CLAUDE.md` package layout |
-| 2  | Integration tests + goldens     | ✅    | yes (CI)       | `internal/integration/`, `scantest.CompareOrDumpJSON` |
-| 3  | Grammar-based parser            | ✅    | yes (perf/UX)  | `grammar-parser-architecture.md`, `grammar-parser-tasks.md`, `grammar/00–60`, `stream-M-grammar2-merge-readiness.md` |
-| 4  | Single contract across builders | ✅    | yes (semantics)| `observed-quirks.md`, `fix-quirks.md`, schema/parameters/responses README `§alias-handling` |
-| 5  | genspec TUI                     | 🔶    | maintainers    | `genspec-tui-linkage.md`, `genspec-tui-linkage-build.md`, `project_genspec_tui` (memory) |
-| 6  | genspec Web UI (WASM)           | 🟡    | users + maintainers | `wasm-playground.md`, `project_wasm_playground` (memory) |
-| 7  | Doc site (Hugo, GH Pages)       | ⬜    | users          | new — to be drafted |
-| 8  | Core engine refactors (non-breaking) | ⬜ | yes (internal)     | `ramblings/vision.md` (v2 framing superseded), `ramblings/index-builder-statefulness.md`, `forthcoming-features.md` |
-| 9  | Wring out go-swagger backlog    | ⬜    | users (236 tickets) | `backlog-go-swagger-20260608.md` — drives V-flag rollouts from §3.x parked items |
-| 10 | OAI v3 support                  | ⬜    | additive (new keywords) | `vision.md` (decoupled from v2; gated on V-imodel only) |
-| 11 | LSP & IDE                       | ⬜    | yes            | `vision.md`; PR-stunt sibling to Stream 6 — defer until maintenance bandwidth allows |
+Hierarchical map: each **stream** → its **features** (each links to its
+`features/<slug>.md` detail file). Stream detail sections follow below.
+
+- **Stream status:** ✅ done · 🔶 in progress · 🟡 shaping · ⬜ not started.
+- **Feature/release markers:** ✅ shipped (with release) · 🔷 targeted release · ⬜ unscheduled.
+- **Origins:** (i) vision · (ii) mid-build · (iii) triaged issue · (iv) deferred refinement.
+- The flat feature catalog (alternate lens) lives in `forthcoming-features.md`.
+
+**1. Disentanglement** ✅ (v0.33) — sub-package split (`.claude/CLAUDE.md`).
+
+**2. Integration tests + goldens** ✅ — `internal/integration/`, `scantest.CompareOrDumpJSON`.
+- ⬜ [Property-based Block generator](features/property-based-block-generator.md) · (i)
+
+**3. Grammar-based parser** ✅ (v0.34) — lexer+grammar replaces regexp; build trackers in `archive/`.
+
+**4. Single contract across builders** ✅ — alias-handling, `observed-quirks.md`.
+
+**5. genspec TUI** 🔶 — v0.36 `genspec-tui-linkage.md`, `project_genspec_tui` (memory).
+
+**6. genspec Web UI (WASM)** 🟡 — v0.37 `wasm-playground.md`, `project_wasm_playground` (memory).
+
+**7. Doc site (Hugo, GH Pages)** ✅ v1 (v0.35) / 🔶 next wave — next-wave items
+(the W-series, with parked entries) are kept in `doc-site-wishlist.md`, **not
+expanded here**. On the *published* roadmap we'll likely surface only the WASM
+"playground UI" (Stream 6), nothing more granular.
+
+**8. Core engine refactors (non-breaking)** ⬜ — v0.37 `ramblings/vision.md`. Pillars `V-scanner / V-builder / V-imodel` (sub-table below).
+- ✅ v0.36 [After-declaration annotation comments](features/comment-source-filtering.md) · (i)
+- ✅ v0.36 [Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md) · (i)
+
+**9. Wring out go-swagger backlog** 🔶 — `backlog-go-swagger-20260608.md`.
+  - ✅ v0.35 [Prune unused models](features/prune-unused-models.md) · (iii) · #2639 (PR #50)
+  - ✅ v0.35 [Definition-name auto-disambiguation](features/name-identity-disambiguation.md) · (iii) · #1734
+  - ✅ v0.35 [Explicit additionalProperties control](features/additionalproperties-control.md) · (iii) · #2539/#3005
+  - ✅ v0.35 [Map additionalProperties for non-string keys](features/map-additionalproperties-keys.md) · (iii) · #2251
+  - ✅ v0.35 [Scanner robustness / fail-loud](features/fail-loud-diagnostics.md) · (iii) · #2886/#2874
+  - ✅ v0.35 [ExternalDocs on non-meta objects](features/externaldocs-non-meta.md) · (iii) · #2872/#2655
+  - ✅ v0.35 [Single-line comment as description](features/single-line-description.md) · (iii) · #2626
+  - ✅ v0.35 [Emit x-go-type](features/emit-x-go-type.md) · (iii) · #2924
+  - ✅ v0.36 [Naming from struct tags (form:, schema:)](features/naming-tags.md) · (iii) · #2912/#1391
+  - ✅ v0.36 [Response-level examples by mime](features/response-examples-by-mime.md) · (iii) · #2871
+  - ✅ v0.36 [Shared swagger:parameters / swagger:response](features/shared-parameters.md) · (iii) · #2632
+  - ✅ v0.36 [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · (iii) · go-swagger#3211
+  - ⬜ v0.37 [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · (iii) · #1913
+  - ⬜ v0.37 [Infer required from field shape](features/infer-required-from-shape.md) · (iii) · #3275 · TODO
+  - ⬜ v0.37 [Per-operation field views](features/per-operation-projections.md) · (iii) · #1992 · low
+  - ⬜ [Name-identity advanced](features/name-identity-advanced.md) · (iv) · low
+  - ⬜ [withPatternProperties auto-inference](features/pattern-properties-inference.md) · (iv) · low
+
+**10. OAI v3 support** ⬜ — `vision.md`; gated on V-imodel.
+- 🔷 v0.39 [Godoc-identifier prefix on swagger:operation](features/godoc-identifier-prefix.md) · (i)
+
+**11. LSP & IDE** ⬜ — `vision.md`; PR-stunt sibling to Stream 6.
+- 🔷 v0.38 [Token-level YAML positions](features/yaml-token-positions.md) · (i)
+- 🔷 v0.38 [Column precision beyond ASCII](features/column-precision-unicode.md) · (i)
+
+**Cross-cutting features** — no dedicated stream (origins i/ii); ride whichever stream next touches their seam.
+- ⬜ v0.37 [Example value coercion (verification)](features/example-values.md) · (i) · #1268/#2246 · verify
+- ⬜ v0.37 [Enum richer values](features/enum-richer-values.md) · (i) · TODO
+- ✅ v0.36 [Skip-jsonify-interfaces opt-out](features/skip-jsonify-interfaces.md) · (ii) · `Options.SkipJSONifyInterfaceMethods`
+- ✅ v0.36 [swagger:description / swagger:title overrides](features/swagger-description-override.md) · (ii)
+- ✅ v0.36 [DefaultAllOfForEmbeds](features/default-allof-for-embeds.md) · (ii) · `Options.DefaultAllOfForEmbeds`
+- ⬜ v0.37 [DiscoverAliasesAsTypes](features/discover-aliases-as-types.md) · (ii)
+- ⬜ [Bullet-list dash preservation](features/bullet-dash-preservation.md) · (iv)
+
+---
+
+## Two levels of increment
+
+Two levels, plus a calendar projection:
+
+- **Stream** — a long-lived initiative (the 11 above). Spans many releases;
+  done only when all its features ship. Tracked here, stream-first.
+- **Feature** — a discrete shippable increment (a knob / V-flag / annotation),
+  one file under `features/`. Maps to one release. Flat catalog in
+  `forthcoming-features.md`.
+- **Release** — the calendar projection (published `maintainers/ROADMAP.md`
+  timeline). A release is a time-slice of features across streams.
+
+**Feature origins** (a feature's detail level follows its origin — short ≠ gap):
+
+- **(i)** initial design vision · **(ii)** idea surfaced mid-build ·
+  **(iii)** triaged go-swagger issue filed as a forthcoming feature
+  (the only origin that maps cleanly to a stream → Stream 9) ·
+  **(iv)** deferred refinement left on a shipped fix.
+
+Origins (i)/(ii) features (enum, example, the knobs) have no dedicated stream —
+they are core-product enhancements grouped under "Cross-cutting features" above.
 
 ---
 
@@ -305,7 +380,7 @@ broader go-openapi WASM-playground pattern, because codescan needs
 
 ---
 
-## 7. Doc site (Hugo, GitHub Pages) — ⬜ not started
+## 7. Doc site (Hugo, GitHub Pages) — ✅ v1 built · 🔶 next wave
 
 **Goal.** A dedicated codescan doc site that supersedes the "generate
 spec" section of the go-swagger doc site. Hosts reference docs for
@@ -313,17 +388,37 @@ the comment grammar, the rules / knobs that govern code-construct
 interpretation (aliased types, special types, `$ref` behaviour, etc.),
 and serves the Web UI as a static playground.
 
-### Open sub-items
+**Status.** The v1 site shipped with **v0.35 (June 2026)** — Hugo +
+hugo-relearn under `docs/doc-site/`, GH Pages workflow live, content
+mounted from test-covered examples in `docs/examples/`. Populated
+sections: `getting-started`, `tutorials` (×11), `shaping-the-output`
+(×14 knob pages), `maintainers` (grammar / annotations / keywords /
+sub-languages), `usage`, `annotation-index`. What remains is the
+**next wave**, not the bootstrap.
 
-| Tag | Item | Status | Notes |
+### Built (v1)
+
+| Tag | Item | Status | Where |
 |-----|------|--------|-------|
-| D-site-bootstrap | Hugo site scaffold + GH Pages workflow | ⬜ | mirror the pattern already used for [go-openapi maintainers doc-site][maintainers-doc-site] |
-| D-grammar-ref | Generated grammar reference + EBNF surface | ⬜ | source: `grammar/50-full.md` + `grammar-ebnf-draft.md` |
-| D-annot-ref | Annotation reference (every `swagger:*` keyword, every property) | ⬜ | should be generated from `grammar` keyword tables |
-| D-contracts | Builder contract pages: alias-handling, embed semantics, stdlib specials | ⬜ | source: schema/parameters/responses README contract sections |
-| D-knobs | `Options` knobs reference (`RefAliases`, `TransparentAliases`, `DescWithRef`, `SetXNullableForPointers`, `SkipExtensions`, etc.) | ⬜ | source: `internal/scanner/options.go` godoc |
-| D-examples | Worked examples for every supported construct (typed enums, aliased models, special types, etc.) | ⬜ | mirror fixtures/enhancements minus the test scaffold |
-| D-playground | Embed the WASM Web UI as a static playground page | ⬜ | depends on Stream 6 |
+| D-site-bootstrap | Hugo scaffold + GH Pages workflow | ✅ | `docs/doc-site/`, `hack/doc-site/hugo/` |
+| D-grammar-ref | Grammar reference + EBNF surface | ✅ | `maintainers/grammar.md` (hand-maintained; visual render = W15) |
+| D-annot-ref | Annotation / keyword reference | ✅ | `annotation-index/`, `maintainers/{annotations,keywords}.md` (hand-maintained; generate-from-grammar = W9) |
+| D-contracts | Builder contract pages (alias-handling, embeds, specials) | ✅ | `shaping-the-output/*` |
+| D-knobs | `Options` knobs reference | ✅ | `shaping-the-output/*` (one page per knob) |
+| D-examples | Worked examples for supported constructs | ✅ | `tutorials/*` + `docs/examples/` (test-covered) |
+| D-playground | Embed the WASM Web UI as a static playground | ⬜ | = W11; depends on Stream 6 |
+
+### Next wave
+
+The W-series (priority markers, sub-tiers, first-wave sequencing) lives in
+**`doc-site-wishlist.md`** — deliberately **not surfaced in the Overview**; the
+doc site is tracked here only as a stream, not feature-by-feature. Parked during
+the 2026-06-23 groom: **W9** (generate-reference-tables-from-grammar — large
+digression; W14 covers the cheap part) and the **W15 railroad-diagram tier**
+(needs a railroad generator; the prettified-EBNF tier W15a stays). Marquee bets
+**W11 → W10** ride the genspec-tui/WASM stream (Stream 6). Satellites:
+`doc-site-reference.md` (build notes), `doc-site-quirks.md` (scanner bugs the docs
+revealed), `doc-site-backlog-alignment.md`.
 
 [maintainers-doc-site]: https://go-openapi.github.io/doc-site/maintainers/index.html
 
@@ -337,6 +432,12 @@ performance, internal architecture, and extensibility. Each pillar
 ships as a v1 minor release. Originally framed as "Road to v2";
 that bundling is superseded by the non-breaking-lens principle —
 see the top-of-roadmap section.
+
+**Features** (see Overview, origin i, 🔷 v0.36 — the clean-godoc cluster):
+[After-declaration annotation comments](features/comment-source-filtering.md) ·
+[Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md). The `V-*`
+pillars (scanner, builder, imodel) are pillar-level, tracked in the sub-table
+below — not feature files.
 
 **Note on risk.** Each pillar is *internally* high risk — they touch
 core systems (scanner, builder dispatch, IR). The non-breaking
@@ -382,11 +483,17 @@ witness fixtures (memory `feedback_schema_discovery_verify_with_witness`).
 
 ---
 
-## 9. Wring out go-swagger backlog — ⬜ not started
+## 9. Wring out go-swagger backlog — 🔶 in progress
 
 **Goal.** Burn down the 236 open issues on go-swagger's "generate
 spec" use case. Many are likely already fixed (4 streams above have
 closed dozens of quirks); some need fresh fixtures.
+
+**Features** (origin iii — full list with links in the Overview). 8 landed at
+v0.35 (prune, name-identity, additionalProperties ×2, fail-loud, externalDocs,
+single-line, x-go-type); open: naming tags, response examples, shared params,
+discriminator discovery, infer-required, projections + two deferred (iv) tails
+(name-identity advanced, withPatternProperties).
 
 **Delivery shape.** Stream 9 is a single stream on the roadmap but
 ships in **smaller chunks** — each batch is its own delivery
@@ -441,9 +548,9 @@ flag as a v1 minor, then close the cluster.
 
 | Flag (parked) | Cluster it closes | Origin |
 |---------------|-------------------|--------|
-| `Options.SkipJSONifyInterfaceMethods` (or `swagger:no-mangle`) | Interface-method name-mangling complaints | `forthcoming-features.md` §3.3 (Q9 fallout) |
+| ✅ `Options.SkipJSONifyInterfaceMethods` (shipped v0.36, `54cf1fd`) | Interface-method name-mangling complaints | `forthcoming-features.md` §3.3 (Q9 fallout) |
 | `Options.DescriptionOverrides` map (per-decl `swagger:description`) | Stdlib godoc noise on `time.Time` / `error` / etc. | §3.4 (Q30) |
-| `Options.DefaultAllOfForEmbeds` | Client-generator users wanting allOf composition shape from embeds | §3.5 (Q-D close-out) |
+| ✅ `Options.DefaultAllOfForEmbeds` (shipped v0.36, `0d550cf`) | Client-generator users wanting allOf composition shape from embeds | §3.5 (Q-D close-out) |
 | `Options.DiscoverAliasesAsTypes` | Users preferring pre-R6 alias discovery (every alias surfaces as a definition) | §3.7 (Q-E close-out) |
 
 Each is XS, the design work is already documented in
@@ -475,6 +582,11 @@ artefacts.
 as **v1 minor releases**. Originally listed in `ramblings/vision.md`
 as the headline v2 objective; now decoupled from v2 per the
 non-breaking-lens principle.
+
+**Features** (see Overview). [Godoc-identifier prefix on `swagger:operation`](features/godoc-identifier-prefix.md)
+(C9; step toward `swagger:operation` ≈ `swagger:route`) · origin (i), 🔷 v0.39. The
+OAI 3 `examples:` map shape is deferred here too (the schema-side `example:` lives
+in the cross-cutting [example-values](features/example-values.md) verification).
 
 ### Dependencies
 
@@ -521,6 +633,11 @@ non-breaking-lens principle.
 ---
 
 ## 11. Language Server Protocol & IDE integrations — ⬜ not started
+
+**Features** (see Overview). Prerequisites (origin i, 🔷 v0.38):
+[Token-level YAML positions](features/yaml-token-positions.md) ·
+[Column precision beyond ASCII](features/column-precision-unicode.md) — both
+needed before per-token IDE highlighting is precise.
 
 **Goal.** Ship a codescan Language Server speaking LSP so that
 developers can, inside their IDE:
@@ -714,6 +831,12 @@ it's ready.
 
 | Date       | Change |
 |------------|--------|
+| 2026-06-22 | **Consolidation pass.** Archived ~14 done/migration plans to `archive/` (`archive/README.md` indexes them). Refreshed stale statuses: Stream 7 ⬜→**✅ v1 built (v0.35) / 🔶 next wave** (was "not started" while the site has 40+ pages); Stream 9 ⬜→**🔶** (V-flag features shipping). Introduced the two-level-increment framing + feature origins. |
+| 2026-06-23 | **Per-feature split + projections.** Every feature now has its own file under `features/<slug>.md` (pure slugs; `prev:` frontmatter keeps the old `§N` traceable). This file's overview became a **hierarchical streams→features outline** (replaced the one-glance table) with release markers (✅ v0.35 / 🔷 vX / ⬜). `forthcoming-features.md` slimmed to a "where we stand" recap + origins legend + one flat catalog. Dropped the "cohort" concept and the interim Feature-index table. |
+| 2026-06-23 | **Feature grooming.** Wrote groomed decisions into all 13 under-/needs-decision features; split **godoc-filter** out of comment-source-filtering (29 files now). Deferred low: pattern-properties-inference, name-identity-advanced, per-operation-projections; TODO: infer-required, enum-richer; verify-and-maybe-retire: example-values. |
+| 2026-06-23 | **Doc-features triage.** Parked as unrealistic in `doc-site-wishlist.md`: **W9** (generate-reference-tables-from-grammar) and the **W15 railroad-diagram tier**; **versioned docs** out-of-scope. Briefly lifted the W-series into Stream 7's Overview, then **pulled it back out** (Fred): the doc site is tracked as a stream only, not feature-by-feature; the wishlist stays the sole detail home. The published roadmap will surface at most the WASM "playground UI". |
+| 2026-06-23 | **v0.36 streak opened.** Base camp `feat/feature-v0.36`. First feature landed: ✅ **`NameFromTags`** (naming from struct tags — #2912/#1391; backlog #1391 closed in `backlog-triaged-feature.md`). |
+| 2026-06-23 | **v0.36 feature #2:** ✅ **Response-level `examples` by mime** on struct `swagger:response` (#2871) — new `examples` grammar keyword (CtxResponse) → `Response.examples`. Operation-YAML path already worked; struct path was the gap. Backlog #2871 ledger note updated. |
 | 2026-06-11 | Initial roadmap drafted post-PR #32 (alias-handling close-out). Streams 1–4 marked ✅; Stream 5 🔶 with LX-spec/prov/join/refs sub-items; Stream 6 🟡; Streams 7–10 ⬜. |
 | 2026-06-11 | Added Stream 11 — LSP & IDE integrations. Pulled together prerequisites already met (grammar positions, diagnostic / provenance callbacks, spec-side index, keyword tables), explicit dependencies on `forthcoming-features.md` §3.1 (token YAML positions) and §4.1 (multi-byte column precision), and L-* sub-items covering server skeleton, diagnostics, position translation, completion, hover, go-to / find-refs, code actions, and IDE clients (VS Code, Neovim, JetBrains, Helix, Zed). |
 | 2026-06-11 | Backlog table (`backlog-go-swagger-20260608.md`) gained a Status column with legend (⬜ open · 👀 verify-only · 🐞 repro-needed · 🛠 fix-needed · ✅ fixed · 🛑 wont-fix · ♻️ duplicate). Closed Stream 9 sub-item `B-table`; opened `B-status-col` (done as part of this same change). |
