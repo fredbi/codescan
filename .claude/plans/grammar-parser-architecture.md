@@ -969,7 +969,7 @@ Option B (EBNF + custom codegen) is explicitly not taken.
 - Pluggable styles — infrastructure in v2.0, `openapi:` + `@` in v2.1.
 
 **Next plan document** (once these settle): task-level implementation plan
-with milestones, comparable to how `observed-quirks.md` drove the Q-pass.
+with milestones, comparable to how `archive/observed-quirks.md` drove the Q-pass.
 
 ---
 
@@ -1077,6 +1077,6 @@ None of these are blockers for starting the task-level plan.
    header); A.4 is the condensed index of decisions.
 2. The next document is the **task-level implementation plan** at
    `.claude/plans/grammar-parser-tasks.md`, with milestones comparable
-   to how `observed-quirks.md` drove the Q-pass.
+   to how `archive/observed-quirks.md` drove the Q-pass.
 3. Keep this file as the "why" reference. Re-litigate only if
    implementation surfaces a constraint the architecture didn't see.

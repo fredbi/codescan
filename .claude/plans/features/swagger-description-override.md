@@ -39,7 +39,7 @@ here.
 
 **Interactions.** The annotations can live after the decl via
 [comment-source-filtering](comment-source-filtering.md); complements
-[godoc-filter](godoc-filter.md). `observed-quirks.md` Q30 documents the empirical
+[godoc-filter](godoc-filter.md). `../archive/observed-quirks.md` Q30 documents the empirical
 `time.Time` observation.
 
 **When to revisit.** When spec-noise complaints recur, or alongside the

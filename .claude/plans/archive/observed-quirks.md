@@ -1050,6 +1050,87 @@ document; pursue via the forthcoming-features entry.
 
 ---
 
+### Q31 — `json:"-"` on a re-declared field evicts a promoted property Go still marshals — STILL PRESENT (decision open)
+
+**Observed in:** the go-swagger#1992 re-audit, 2026-07-30, while
+designing `swagger:omit` (`.claude/plans/swagger-omit.md` §7).
+
+**File:** `internal/builders/schema/fields.go`, the `ignore` branch of
+`structFieldCarrier` — "The JSON-tag-ignored case carries a side effect:
+it removes from target.Properties any entry whose owner Go name matches
+the current field's Go name."
+
+**Symptom.** When a struct re-declares a promoted field with `json:"-"`,
+codescan deletes the inherited property. Go does not: `encoding/json`
+ignores a `-` field **entirely**, so it never enters the name set, never
+shadows the promoted field, and the embedded one keeps marshalling.
+Verified against the fixture's own shape:
+
+```go
+type SimpleOne struct { ID int64 `json:"id"`; Name string `json:"name"`; Age int32 `json:"age"` }
+
+type OverridingOneIgnore struct {   // fixtures/goparsing/classification/models/nomodel.go:243
+	SimpleOne
+	Age int32 `json:"-"`
+}
+```
+
+```text
+json.Marshal          -> {"id":1,"name":"n","age":42}   // age present, from SimpleOne
+json.Unmarshal {"age":7} -> SimpleOne.Age = 7           // the outer field is never touched
+codescan              -> {id, name}                     // age deleted
+```
+
+So the emitted schema **understates the wire**: a field that really does
+cross it is missing from the document. That is the inverse of the usual
+"we over-document" quirk, and the one direction the tool should never
+take — a consumer generating a client from this spec cannot produce the
+payload the server actually accepts.
+
+**Category:** Bug (fidelity). The scanner contradicts `encoding/json`,
+which is the authority for what the type puts on the wire.
+
+**Locked by:** `TestOverridingOneIgnore`
+(`internal/builders/schema/schema_test.go:512`) asserts exactly two
+properties survive — i.e. the current test pins the unfaithful
+behaviour. Any fix must rewrite that test, not just the code.
+
+**Why it is not a one-liner.** Three things pull in different directions:
+
+- it is (was) the *only* field-hiding lever users have, so someone out
+  there is relying on it — quite possibly having reached for it exactly
+  because it looked like the way to hide a promoted field;
+- `swagger:omit` (PR #67) now supersedes it and does the job honestly,
+  but only for authors who migrate;
+- removing the eviction changes emitted output for existing users
+  without warning, and the field it puts *back* is one they thought they
+  had removed — a surprising direction for a "fix".
+
+**What landed already.** The Hint `scan.shadowed-embed-field` fires on
+this shape and points at `swagger:omit`. That makes the trap visible
+without changing any output.
+
+**Options (undecided, 2026-07-30):**
+
+- **(a) Remove the eviction.** Restores fidelity; breaks
+  `TestOverridingOneIgnore`; silently re-introduces fields in specs that
+  currently omit them.
+- **(b) Keep it, document it** as a deliberate spec-only override —
+  "codescan treats a `json:"-"` re-declaration as *intent to hide*, even
+  though Go still marshals it". Honest as documentation, but it makes
+  the tool's output diverge from the code by design, which is the thing
+  the `swagger:omit` design explicitly refused to do.
+- **(c) Gate it** behind an option (default = today's behaviour, opt in
+  to fidelity), which buys a migration path at the cost of yet another
+  knob.
+- **(d) Escalate the Hint to a Warning** and keep the eviction, so the
+  divergence is loud but nothing breaks.
+
+**Blocks:** repointing `fixtures/bugs/1992` at the mechanism the issue is
+actually about (its current content witnesses `readOnly`, which belongs
+to #1063). The repro can't be written until it is known whether the
+eviction stays.
+
 ## Audit checklist (refreshed)
 
 The fixture-and-golden infrastructure built in this stream — the
@@ -1057,7 +1138,8 @@ witness-then-fix harness — is now the way any future quirk-cleanup
 pass should operate:
 
 1. Pick a remaining quirk (Q7 / Q8 / Q9 / Q11–Q13 are what's left of
-   the original baseline list).
+   the original baseline list; Q31 is the newest and needs a decision
+   before a fix can be written).
 2. Verify its witness fixture still triggers the documented behaviour.
 3. Fix the production code.
 4. Regenerate the affected golden(s) with `UPDATE_GOLDEN=1 go test

@@ -2,7 +2,7 @@
 
 Forthcoming improvements for the **codescan doc-site** (the Hugo site under
 `docs/doc-site/` + `hack/doc-site/hugo/`, with test-covered examples in
-`docs/examples/`). Companions: `doc-site-quirks.md` (scanner bugs the docs
+`docs/examples/`). Companions: `archive/doc-site-quirks.md` (scanner bugs the docs
 revealed), and the build plan in the doc-site worktree's
 `doc-site-reference.md`. Cross-refs to product directions:
 `project_wasm_playground`, `project_genspec_tui`, `project_v2_vision`.
@@ -112,7 +112,7 @@ the toolkit story.
 Bounded and source-ready → good early build.
 
 ### W3 — Known limitations page 🟢 (after quirks triage)
-A public, honest "known limitations" section once `doc-site-quirks.md` F1–F9 are
+A public, honest "known limitations" section once `archive/doc-site-quirks.md` F1–F9 are
 triaged/fixed — sets expectations (alias edge cases, OAS2-only surface, etc.).
 Gate on the fix branch so we don't advertise bugs that are about to vanish.
 
@@ -141,7 +141,7 @@ Cover at least:
   `SingleLineCommentAsDescription` knob that opts out (already documented in
   Shaping → Single-line comments; link to it).
 
-Sources ready: `doc-site-quirks.md`, the boundary memory's footgun notes, and
+Sources ready: `archive/doc-site-quirks.md`, the boundary memory's footgun notes, and
 the existing test-covered witnesses (`shaping/singleline`, `concepts/maps`,
 `concepts/security`). Bounded, high-value for authors → good early build.
 

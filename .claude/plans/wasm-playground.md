@@ -372,22 +372,44 @@ two big remaining features need data this branch doesn't have yet:
 
 #### Phase 1 backlog — TUI chrome (polish, not rebase-gated)
 
-- **Go syntax highlighting** in the editor. Harder than the spec case:
-  `bubbles/textarea` renders raw text, so highlighting-while-editing needs an
-  overlay or a custom render. Likely view-only first, or deferred to the
+- ✅ **JSON/YAML syntax highlighting** in the spec pane (3fa4aaf). chroma was
+  NOT used: the lexer that builds the line↔pointer index already classifies
+  every token and we were throwing that away, so highlighting became a third
+  product of the same walk — zero new dependencies. The composition problem the
+  chroma sketch would have hit (truncating an already-coloured string cuts
+  through escapes) dissolves with `(line, col, kind)` spans: truncate the RAW
+  text at rune boundaries, style last.
+- ✅ **Go syntax highlighting** in the read-only source viewer (fb945b7), via
+  `go/scanner` onto the same spans/renderer/palette. Easier than this entry
+  assumed, because the file pane is no longer only a textarea — the viewer has
+  its own per-line render loop, so it is the same job as the spec pane.
+  Annotation comments get the spec-key class rather than the dimmed comment
+  class: in a spec generator the `swagger:` comment is the payload.
+  **Edit mode is still out of scope** — `bubbles/textarea` emits the buffer
+  verbatim, so highlighting there means replacing the widget, i.e. the
   VIM/VS-Code editor that supersedes the hand-rolled one.
-- **JSON/YAML syntax highlighting** in the spec pane. Easy: the pane is a
-  read-only viewport, so run the rendered spec through
-  `github.com/alecthomas/chroma` (terminal formatter) → ANSI → `SetContent`.
-  *Bonus:* chroma is pure Go → carries to the WASM web playground too. Re-apply
-  highlight inside `Spec.render()` so it composes with search-match highlighting.
+- ✅ **Grammar-keyword highlighting** (342b3be) — `required:` / `min:` / `enum:`
+  inside an annotated comment read as keywords rather than dimmed prose, via
+  `grammar.Lookup` so aliases and case come from the parser's own table. Scoped
+  per FILE, not per comment group: a field's constraints sit in the field's doc
+  comment while the `swagger:model` that gives them meaning is on the type.
+- ✅ **Diagnostics at the site** (47b4c13) — each finding underlined in its
+  severity colour on the run it points at, re-derived on every rescan. Started
+  as "colour deprecated keywords"; there is no deprecated-keyword table, and
+  `validate.deprecated` reports at the DECLARATION, so a deprecation-only visual
+  would have read as "this type is deprecated". Driving from the diagnostic
+  stream keeps one source of truth.
+  - **Open upstream nit:** `parse.invalid-enum-option` reports the column of the
+    space BEFORE the value (`// collection format: pipe` → points at `" pipe"`),
+    so the mark starts one column early. Cosmetic; fix belongs in codescan.
 - **Save / reload file (when buffered-in).** Save exists (`Ctrl-S`); add an
   explicit **reload** (e.g. `Ctrl-R` / `F5`) to re-pull the open file from disk
   into the buffer — with an unsaved-edits guard (confirm before discarding). The
   auto-reload was removed because it clobbered edits; a manual, guarded reload is
   the right replacement (useful when the file changed on disk externally).
-- Smaller: `?` help overlay (reuse the modal infra); adjustable split sizes;
-  light/dark theme.
+- ✅ `?` help overlay (3f872dd) — plus an `h: help` chip in the header, since a
+  help key nobody can see is not a help key.
+- Smaller, still open: adjustable split sizes; light/dark theme.
 
 ### Phase 2 — WASM web spec generator
 

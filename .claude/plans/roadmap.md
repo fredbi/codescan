@@ -38,7 +38,7 @@ Hierarchical map: each **stream** → its **features** (each links to its
 
 **3. Grammar-based parser** ✅ (v0.34) — lexer+grammar replaces regexp; build trackers in `archive/`.
 
-**4. Single contract across builders** ✅ — alias-handling, `observed-quirks.md`.
+**4. Single contract across builders** ✅ — alias-handling, `archive/observed-quirks.md`.
 
 **5. genspec TUI** 🔶 — v0.36 `genspec-tui-linkage.md`, `project_genspec_tui` (memory).
 
@@ -53,24 +53,24 @@ expanded here**. On the *published* roadmap we'll likely surface only the WASM
 - ✅ v0.36 [After-declaration annotation comments](features/comment-source-filtering.md) · (i)
 - ✅ v0.36 [Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md) · (i)
 
-**9. Wring out go-swagger backlog** 🔶 — `backlog-go-swagger-20260608.md`.
-  - ✅ v0.35 [Prune unused models](features/prune-unused-models.md) · (iii) · #2639 (PR #50)
-  - ✅ v0.35 [Definition-name auto-disambiguation](features/name-identity-disambiguation.md) · (iii) · #1734
-  - ✅ v0.35 [Explicit additionalProperties control](features/additionalproperties-control.md) · (iii) · #2539/#3005
-  - ✅ v0.35 [Map additionalProperties for non-string keys](features/map-additionalproperties-keys.md) · (iii) · #2251
-  - ✅ v0.35 [Scanner robustness / fail-loud](features/fail-loud-diagnostics.md) · (iii) · #2886/#2874
-  - ✅ v0.35 [ExternalDocs on non-meta objects](features/externaldocs-non-meta.md) · (iii) · #2872/#2655
-  - ✅ v0.35 [Single-line comment as description](features/single-line-description.md) · (iii) · #2626
-  - ✅ v0.35 [Emit x-go-type](features/emit-x-go-type.md) · (iii) · #2924
-  - ✅ v0.36 [Naming from struct tags (form:, schema:)](features/naming-tags.md) · (iii) · #2912/#1391
-  - ✅ v0.36 [Response-level examples by mime](features/response-examples-by-mime.md) · (iii) · #2871
-  - ✅ v0.36 [Shared swagger:parameters / swagger:response](features/shared-parameters.md) · (iii) · #2632
-  - ✅ v0.36 [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · (iii) · go-swagger#3211
-  - ⬜ v0.37 [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · (iii) · #1913
-  - ⬜ v0.37 [Infer required from field shape](features/infer-required-from-shape.md) · (iii) · #3275 · TODO
-  - ⬜ v0.37 [Per-operation field views](features/per-operation-projections.md) · (iii) · #1992 · low
-  - ⬜ [Name-identity advanced](features/name-identity-advanced.md) · (iv) · low
-  - ⬜ [withPatternProperties auto-inference](features/pattern-properties-inference.md) · (iv) · low
+**9. Wring out go-swagger backlog** 🔶 — `archive/backlog-go-swagger-20260608.md`.
+- ✅ v0.35 [Prune unused models](features/prune-unused-models.md) · (iii) · #2639 (PR #50)
+- ✅ v0.35 [Definition-name auto-disambiguation](features/name-identity-disambiguation.md) · (iii) · #1734
+- ✅ v0.35 [Explicit additionalProperties control](features/additionalproperties-control.md) · (iii) · #2539/#3005
+- ✅ v0.35 [Map additionalProperties for non-string keys](features/map-additionalproperties-keys.md) · (iii) · #2251
+- ✅ v0.35 [Scanner robustness / fail-loud](features/fail-loud-diagnostics.md) · (iii) · #2886/#2874
+- ✅ v0.35 [ExternalDocs on non-meta objects](features/externaldocs-non-meta.md) · (iii) · #2872/#2655
+- ✅ v0.35 [Single-line comment as description](features/single-line-description.md) · (iii) · #2626
+- ✅ v0.35 [Emit x-go-type](features/emit-x-go-type.md) · (iii) · #2924
+- ✅ v0.36 [Naming from struct tags (form:, schema:)](features/naming-tags.md) · (iii) · #2912/#1391
+- ✅ v0.36 [Response-level examples by mime](features/response-examples-by-mime.md) · (iii) · #2871
+- ✅ v0.36 [Shared swagger:parameters / swagger:response](features/shared-parameters.md) · (iii) · #2632
+- ✅ v0.36 [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · (iii) · go-swagger#3211
+- ✅ v0.36 [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · (iii) · #1913
+- ⬜ v0.37 [Infer required from field shape](features/infer-required-from-shape.md) · (iii) · #3275 · TODO
+- ⬜ v0.37 [Per-operation field views](features/per-operation-projections.md) · (iii) · #1992 · low
+- ⬜ [Name-identity advanced](features/name-identity-advanced.md) · (iv) · low
+- ⬜ [withPatternProperties auto-inference](features/pattern-properties-inference.md) · (iv) · low
 
 **10. OAI v3 support** ⬜ — `vision.md`; gated on V-imodel.
 - 🔷 v0.39 [Godoc-identifier prefix on swagger:operation](features/godoc-identifier-prefix.md) · (i)
@@ -80,11 +80,11 @@ expanded here**. On the *published* roadmap we'll likely surface only the WASM
 - 🔷 v0.38 [Column precision beyond ASCII](features/column-precision-unicode.md) · (i)
 
 **Cross-cutting features** — no dedicated stream (origins i/ii); ride whichever stream next touches their seam.
-- ⬜ v0.37 [Example value coercion (verification)](features/example-values.md) · (i) · #1268/#2246 · verify
-- ⬜ v0.37 [Enum richer values](features/enum-richer-values.md) · (i) · TODO
 - ✅ v0.36 [Skip-jsonify-interfaces opt-out](features/skip-jsonify-interfaces.md) · (ii) · `Options.SkipJSONifyInterfaceMethods`
 - ✅ v0.36 [swagger:description / swagger:title overrides](features/swagger-description-override.md) · (ii)
 - ✅ v0.36 [DefaultAllOfForEmbeds](features/default-allof-for-embeds.md) · (ii) · `Options.DefaultAllOfForEmbeds`
+- ⬜ v0.37 [Example value coercion (verification)](features/example-values.md) · (i) · #1268/#2246 · verify
+- ⬜ v0.37 [Enum richer values](features/enum-richer-values.md) · (i) · TODO
 - ⬜ v0.37 [DiscoverAliasesAsTypes](features/discover-aliases-as-types.md) · (ii)
 - ⬜ [Bullet-list dash preservation](features/bullet-dash-preservation.md) · (iv)
 
@@ -268,10 +268,12 @@ package.
    Q13 and the stdlib-recognizer asymmetry. Phase D scrub workflow
    (memory `feedback_phase_d_scrub_workflow`) — promote rules to
    README, then scrub internal vocabulary, then squash.
-3. Audit: every entry in `observed-quirks.md` is resolved, reframed,
+3. Audit: every entry in `archive/observed-quirks.md` is resolved, reframed,
    or closed-no-action; every phase in `fix-quirks.md` is ✅.
 
-**Surviving deferrals.** `deferred-quirks.md` — D1 (alias-expand
+**Surviving deferrals.** *(2026-07-30: all six D-entries verified closed; the
+register moved to `archive/`. Live quirks now in `quirks-open.md`.)*
+`archive/deferred-quirks.md` — D1 (alias-expand
 parameters body/query semantic), D2 (embed-as-allOf vs embed-as-
 inline asymmetry on named interfaces), D3 (`swagger:strfmt` +
 `swagger:model` named-strfmt inconsistency). All routed into v2
@@ -287,31 +289,38 @@ spec ↔ code navigation, and a packaging mode for repro reports.
 Audience: maintainers and contributors.
 
 **Status.** Phase 1 of the wider WASM-playground vision (memory
-`project_genspec_tui`). Post-rebase milestone — diagnostics pane
-LANDED (b2574fe).
+`project_genspec_tui`). **Linkage chain COMPLETE 2026-07-30** — Phases A–D plus
+the S7–S13 series and its three spun-out backlog items, all on
+`feat/genspec-tui` (22 commits, unpushed, awaiting review). The UX-polish
+**chrome** backlog is mostly done on top of it — help overlay + header chip,
+diagnostics-pane consistency, spec-pane and Go syntax highlighting (no new
+dependencies: both reuse a lexer pass we already ran), grammar-keyword
+highlighting inside annotated comments, and the scanner's diagnostics drawn on
+the token they name. Remaining stream-5 work: guarded reload, adjustable
+splits, light/dark theme, then Repro-pack and Map-vis.
 
 ### Open sub-items
 
 | Tag | Item | Status | Notes |
 |-----|------|--------|-------|
-| LX-spec | Phase A — spec-side offset index, JSON / YAML pointer surfaces | ⬜ | `genspec-tui-linkage-build.md` |
-| LX-prov | Phase B — codescan-side provenance callback + anchor wiring | ⬜ | needs `Provenance` type + `OnProvenance` in scanner Options |
-| LX-join | Phase C — caller-owned join + `f` nav state in TUI | ⬜ | gated on A + B |
-| LX-refs | Phase D — `$ref` resolution + F3 / Shift-F3 jump nav | ⬜ | gated on C |
-| UX-polish | UX polish pass over status line, scroll behaviour, panes | 🔶 | trickling in |
+| LX-spec | Phase A — spec-side offset index, JSON / YAML pointer surfaces | ✅ | `genspec-tui-linkage-build.md`; built on the `go-openapi/core/json` lexers (no `GOEXPERIMENT`) |
+| LX-prov | Phase B — codescan-side provenance callback + anchor wiring | ✅ | `Provenance` + `OnProvenance` in scanner Options; all anchor kinds + keyword-line granularity |
+| LX-join | Phase C — caller-owned join + `f` nav state in TUI | ✅ | bidirectional `f` (3 drivers); C7 tail = S7/S8, C8 tests = S9 |
+| LX-refs | Phase D — `$ref` resolution + F3 / Shift-F3 jump nav | ✅ | S10–S12; `Enter` go-to-definition added to scope |
+| UX-polish | UX polish pass over status line, scroll behaviour, panes | 🔶 | nav/visual half done (S8 roles, S13 gutter, spec line cursor, viewer key pass-through, rescan anchor); **chrome** mostly done — help overlay + header chip, spec-pane and Go syntax highlighting; still open: guarded reload, adjustable splits, light/dark theme. See `wasm-playground.md` §"Phase 1 backlog — TUI chrome" |
 | Repro-pack | Reporting mode: pack repro artefacts for GitHub issues | ⬜ | uses `internal/scrambler/` (memory `feedback_verify_module_assumptions` — internal/ reachable from cmd module) |
 | Map-vis | Visualise code ↔ spec node mapping | ⬜ | new sub-feature; depends on LX-join |
-| Diag-nav | Diagnostic ↔ code navigation | ⬜ | depends on LX-spec position table |
+| Diag-nav | Diagnostic ↔ code navigation | ✅ | landed as the `followDiag` driver (diag pane `f`) |
 
-**Two decisions to confirm at build time** (carried from
+**Decisions — both settled** (carried from
 `genspec-tui-linkage-build.md`):
 
-- **D1** — go1.26 for the TUI module so `jsontext` is stdlib (TUI
-  module drops go1.25 from *its* CI; the library keeps its
-  2-version window). Fallback: hand-rolled tokenizer behind a build tag.
-- **D2** — `Provenance` home → `internal/scanner` beside `Options`
-  (recommended), public via `codescan.Options`, TUI-importable like
-  `grammar.Diagnostic`.
+- ~~**D1** — go1.26 for the TUI module so `jsontext` is stdlib.~~ **MOOT**
+  (`ca0653c`): the `go-openapi/core/json` lexer swap removed the
+  `GOEXPERIMENT=jsonv2` dependency entirely. No toolchain pin, no
+  release-pipeline constraint; the TUI module keeps `go 1.25.8`.
+- ✅ **D2** — `Provenance` lives in `internal/scanner` beside `Options`,
+  public via `codescan.Options`, TUI-importable like `grammar.Diagnostic`.
 
 **Suggested PR order.** PR-A and PR-B can land in either order
 (parallel). PR-C joins them. PR-D last.
@@ -417,7 +426,7 @@ the 2026-06-23 groom: **W9** (generate-reference-tables-from-grammar — large
 digression; W14 covers the cheap part) and the **W15 railroad-diagram tier**
 (needs a railroad generator; the prettified-EBNF tier W15a stays). Marquee bets
 **W11 → W10** ride the genspec-tui/WASM stream (Stream 6). Satellites:
-`doc-site-reference.md` (build notes), `doc-site-quirks.md` (scanner bugs the docs
+`doc-site-reference.md` (build notes), `archive/doc-site-quirks.md` (scanner bugs the docs
 revealed), `doc-site-backlog-alignment.md`.
 
 [maintainers-doc-site]: https://go-openapi.github.io/doc-site/maintainers/index.html
@@ -561,7 +570,7 @@ the existing-vs-alternative code path on it".
 
 | Tag | Item | Status | Notes |
 |-----|------|--------|-------|
-| B-table | Triage table | ✅ | `backlog-go-swagger-20260608.md` — 236 issues + embedded-example appendix |
+| B-table | Triage table | ✅ | `archive/backlog-go-swagger-20260608.md` — 236 issues + embedded-example appendix |
 | B-status-col | Add per-issue status column (open / verify-only / repro-needed / fixed / wont-fix / dup) | ✅ | landed 2026-06-11 with the legend in the table intro |
 | B-triage-drop | Sweep-close issues lacking sufficient detail / stale; first visible delivery, no code | ⬜ | cheapest ship; shrinks actionable remainder |
 | B-triage-batches | Partition actionable remainder into topic-clusters | ⬜ | prerequisite for every B-batch-N; uses the Status column; output is the cluster list checked into the same backlog file |
@@ -835,11 +844,11 @@ it's ready.
 | 2026-06-23 | **Per-feature split + projections.** Every feature now has its own file under `features/<slug>.md` (pure slugs; `prev:` frontmatter keeps the old `§N` traceable). This file's overview became a **hierarchical streams→features outline** (replaced the one-glance table) with release markers (✅ v0.35 / 🔷 vX / ⬜). `forthcoming-features.md` slimmed to a "where we stand" recap + origins legend + one flat catalog. Dropped the "cohort" concept and the interim Feature-index table. |
 | 2026-06-23 | **Feature grooming.** Wrote groomed decisions into all 13 under-/needs-decision features; split **godoc-filter** out of comment-source-filtering (29 files now). Deferred low: pattern-properties-inference, name-identity-advanced, per-operation-projections; TODO: infer-required, enum-richer; verify-and-maybe-retire: example-values. |
 | 2026-06-23 | **Doc-features triage.** Parked as unrealistic in `doc-site-wishlist.md`: **W9** (generate-reference-tables-from-grammar) and the **W15 railroad-diagram tier**; **versioned docs** out-of-scope. Briefly lifted the W-series into Stream 7's Overview, then **pulled it back out** (Fred): the doc site is tracked as a stream only, not feature-by-feature; the wishlist stays the sole detail home. The published roadmap will surface at most the WASM "playground UI". |
-| 2026-06-23 | **v0.36 streak opened.** Base camp `feat/feature-v0.36`. First feature landed: ✅ **`NameFromTags`** (naming from struct tags — #2912/#1391; backlog #1391 closed in `backlog-triaged-feature.md`). |
+| 2026-06-23 | **v0.36 streak opened.** Base camp `feat/feature-v0.36`. First feature landed: ✅ **`NameFromTags`** (naming from struct tags — #2912/#1391; backlog #1391 closed in `archive/backlog-triaged-feature.md`). |
 | 2026-06-23 | **v0.36 feature #2:** ✅ **Response-level `examples` by mime** on struct `swagger:response` (#2871) — new `examples` grammar keyword (CtxResponse) → `Response.examples`. Operation-YAML path already worked; struct path was the gap. Backlog #2871 ledger note updated. |
 | 2026-06-11 | Initial roadmap drafted post-PR #32 (alias-handling close-out). Streams 1–4 marked ✅; Stream 5 🔶 with LX-spec/prov/join/refs sub-items; Stream 6 🟡; Streams 7–10 ⬜. |
 | 2026-06-11 | Added Stream 11 — LSP & IDE integrations. Pulled together prerequisites already met (grammar positions, diagnostic / provenance callbacks, spec-side index, keyword tables), explicit dependencies on `forthcoming-features.md` §3.1 (token YAML positions) and §4.1 (multi-byte column precision), and L-* sub-items covering server skeleton, diagnostics, position translation, completion, hover, go-to / find-refs, code actions, and IDE clients (VS Code, Neovim, JetBrains, Helix, Zed). |
-| 2026-06-11 | Backlog table (`backlog-go-swagger-20260608.md`) gained a Status column with legend (⬜ open · 👀 verify-only · 🐞 repro-needed · 🛠 fix-needed · ✅ fixed · 🛑 wont-fix · ♻️ duplicate). Closed Stream 9 sub-item `B-table`; opened `B-status-col` (done as part of this same change). |
+| 2026-06-11 | Backlog table (`archive/backlog-go-swagger-20260608.md`) gained a Status column with legend (⬜ open · 👀 verify-only · 🐞 repro-needed · 🛠 fix-needed · ✅ fixed · 🛑 wont-fix · ♻️ duplicate). Closed Stream 9 sub-item `B-table`; opened `B-status-col` (done as part of this same change). |
 | 2026-06-11 | Stream 9 broken down into smaller chunks: each batch is its own delivery, not part of a monolithic burn-down. Added prerequisite sub-item `B-triage-batches` (partition into priority-ordered batches of ~50 — *not done yet*). `B-pass-1` / `B-pass-2..5` renamed to `B-batch-1` / `B-batch-2..N` and gated on `B-triage-batches`. |
 | 2026-06-11 | Stream 6 reframed honestly: primarily a PR stunt with two genuine "earns its keep" conditions — (1) deploy as a real doc-site playground (`W-deploy`), (2) "report issue" rail for cleaner inbound tickets (`W-report`, feeds Stream 9). Added cross-stream note 6 → 9. |
 | 2026-06-11 | **The big reframe.** Added "Principle — the non-breaking lens" as a top-level section. Stream 8 retitled "Road to v2" → "Core engine refactors (non-breaking)"; the V-flags pillar and the "parked items to fold in at v2" table are gone — V-flags moved to Stream 9 as a delivery mode driven by batch triage; the rest of the parked items live in their natural home streams. Stream 10 retitled "v2 + OAI v3 support" → "OAI v3 support"; gated only on V-imodel, ships keyword family per minor release with additive `RunV3` entry point. Stream 11 demoted to "PR-stunt sibling to Stream 6 — defer until maintenance bandwidth allows". `ramblings/vision.md` v2 framing flagged as superseded for packaging (deliverables remain). |

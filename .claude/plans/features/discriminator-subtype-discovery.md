@@ -2,7 +2,7 @@
 title: Auto-discover discriminator subtypes of a referenced base
 stream: 9
 origin: iii
-status: open
+status: done
 release: v0.37
 issues: [go-swagger#1913]
 prev: "§15"
@@ -10,7 +10,14 @@ prev: "§15"
 
 # Auto-discover discriminator subtypes of a referenced base
 
-**Status:** ⬜ open.
+**Status:** ✅ done (2026-07-30) · merged PR #65 into `roadmap` (feature `5e03328`, doc-site
+`3bd0c93`).
+
+**Gating:** always on (no `Options` knob) — an incomplete polymorphic family is unusable, so this is
+a fix. Two hooks: reverse-index pull inside the discovery fixpoint (`spec/subtypes.go`), and the
+prune reachability rule §12 deferred here (a reached discriminated base keeps its family). Each pull
+raises a `scan.discovered-subtype` Hint. Fixture:
+`fixtures/enhancements/discriminated-subtypes` (+ `edges/` corner cases).
 
 **Origin.** go-swagger#1913 (backlog verification, 2026-06-15). Interface-based
 discriminator models already work: a `swagger:model` interface with a

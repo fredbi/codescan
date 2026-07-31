@@ -65,7 +65,7 @@ title → file · stream · origin · issues. Markers: **low** = deferred low pr
 - ✅ [Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md) · Stream 8 · (i) · 🔷 v0.36
 - ✅ [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · Stream 8 · (iii) · 🔷 v0.36 · go-swagger#3211
 - ✅ [Shared `swagger:parameters` / `swagger:response`](features/shared-parameters.md) · Stream 9 · (iii) · 🔷 v0.36 · go-swagger#2632
-- ⬜ [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · Stream 9 · (iii) · go-swagger#1913
+- ✅ [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · Stream 9 · (iii) · go-swagger#1913
 - ⬜ [Infer `required` from field shape](features/infer-required-from-shape.md) · Stream 9 · (iii) · go-swagger#3275 · **TODO**
 - ⬜ [Per-operation field views (projections)](features/per-operation-projections.md) · Stream 9 · (iii) · go-swagger#1992 · **low**
 - ⬜ [Name-identity advanced](features/name-identity-advanced.md) · Stream 9 · (iv) · **low**

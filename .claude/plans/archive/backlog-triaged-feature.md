@@ -12,13 +12,15 @@ feature lands._
 - #1268 → forthcoming-features **§2.1** — example annotation only supports strings
 - #1391 → ✅ LANDED v0.36 (`NameFromTags`, feat/feature-v0.36) — Generate doc for struct having tag other than json
 - #1118 → ✅ LANDED v0.36 forthcoming-features **§13** — Generate spec sometimes sets title, sometimes description for model (deterministic now; §13 = opt-in further control)
-- #1992 → forthcoming-features **§19** — Hide parts of composition for a struct (per-operation field views)
-- #2246 → forthcoming-features **§2.1** — swagger:model Example field forces JSON to string
-- #2539 → forthcoming-features **§17** — Generate spec with additionalProperties
-- #2626 → forthcoming-features **§13** — Single line comment should never be parsed as title
+- #1992 → forthcoming-features **§19** — Hide parts of composition for a struct (per-operation field views) => **more
+testing needed**
+- #2246 → forthcoming-features **§2.1** — swagger:model Example field forces JSON to string => **more testing needed.
+Should be fixed**
+- #2539 → ✅ forthcoming-features **§17** — Generate spec with additionalProperties
+- #2626 → ✅ forthcoming-features **§13** — Single line comment should never be parsed as title
 - #2632 → ✅ LANDED v0.36 forthcoming-features **§11** — Applying swagger:parameters to all operations
-- #2924 → forthcoming-features **§20** — emit `x-go-type` vendor extension (code→spec; cheap opt-in)
-- #3275 → forthcoming-features **§16** — question(generate spec) : generating spec from go types, specify required without explicit comment
+- #2924 → ✅ forthcoming-features **§20** — emit `x-go-type` vendor extension (code→spec; cheap opt-in)
+- #3275 → TODO forthcoming-features **§16** — question(generate spec) : generating spec from go types, specify required without explicit comment
 - #3211 → ✅ LANDED v0.36 (inner markdown — `swagger:description \|`, feat/feature-v0.36) — [spec/parsing] Add indentation support
 
 | # | Title | Summary | Example? | Status | Need doc |

@@ -43,11 +43,41 @@ A coherent "richer enum values" feature spanning three sub-concerns:
   fixtures and confirm the full pipeline (parser → sub-parser → schema builder
   → spec) round-trips them.
 
-**Already done — v1 enum quirks (§1.2a).** The concrete v1 enum bugs
-(leading-whitespace in comma lists, silent drop of `swagger:enum TypeName` with
-no matching consts, stale `x-go-enum-desc` when an inline override wins) were
-**migration-commit obligations fixed in the P5.1 schema-builder migration**, not
-pending items. Listed here only as a crossref; nothing remains to do on them.
+**Already done — v1 enum quirks (§1.2a).** Leading-whitespace in comma lists and
+the silent drop of `swagger:enum TypeName` with no matching consts were
+**migration-commit obligations fixed in the P5.1 schema-builder migration**. The
+`swagger:enum TypeName`-without-consts case now raises
+`parse.invalid-enum-option` ("no matching const values found; enum semantics
+dropped"), verified 2026-07-30.
+
+**§1.2b — residual: an inline override discards the type's per-value docs,
+silently.** The original §1.2a entry claimed the `x-go-enum-desc` quirk was
+closed with "nothing remains to do". Half of it was: the *stale* desc no longer
+survives to contradict a narrowed enum — it is stripped. What remains is that the
+strip is **silent and lossy**. Probed 2026-07-30 against
+`fixtures/enhancements/enum-overrides` (case E):
+
+```go
+// swagger:enum PriorityE     → consts low / medium / high, each with a doc comment
+type PriorityE string
+
+type NotificationE struct {
+    // enum: urgent, normal   ← the field narrows to values the type never declared
+    Priority PriorityE `json:"priority"`
+}
+```
+
+emits `{"type":"string","enum":["urgent","normal"]}` — no `x-go-enum-desc`, and
+**no diagnostic** (only case D, the no-consts one, warns). So the per-value docs
+`PriorityE` contributed vanish without a trace.
+
+Whether that is a bug depends on intent, which is why it sits with this feature
+rather than in the quirk register: if the field's override is a genuine narrowing
+to *different* values, dropping the type's docs is correct and only the silence is
+wrong (→ emit a Hint). If overrides are meant to *subset* the type's values, the
+matching docs should be carried through (→ filter `x-go-enum-desc` rather than
+strip it). Decide when this feature is picked up; it is the smallest useful slice
+of it.
 
 **When to revisit.** A scanner feature, logically independent of the
 parser-migration — pick up when non-const enum values are demanded by real

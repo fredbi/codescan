@@ -353,9 +353,9 @@ examples. Hugo 56 pages 0 warn/err.
 
 **Boundary advanced to `664a347` — fully caught up.**
 
-## O. Full ledger 📖 sweep (2026-06-15) — tracker split into backlog-triaged-ledger.md
+## O. Full ledger 📖 sweep (2026-06-15) — tracker split into archive/backlog-triaged-ledger.md
 
-Cross-checked all **78** `📖 Need-doc` rows in `backlog-triaged-ledger.md` (the
+Cross-checked all **78** `📖 Need-doc` rows in `archive/backlog-triaged-ledger.md` (the
 commit-driven passes A–N could miss a 📖 issue triaged without a commit). 63 are
 referenced in this doc; the other 15 broke down as:
 
