@@ -40,9 +40,9 @@ Hierarchical map: each **stream** → its **features** (each links to its
 
 **4. Single contract across builders** ✅ — alias-handling, `archive/observed-quirks.md`.
 
-**5. genspec TUI** 🔶 — v0.36 `genspec-tui-linkage.md`, `project_genspec_tui` (memory).
+**5. genspec TUI** ✅ — v0.36 `genspec-tui-linkage.md`, `project_genspec_tui` (memory).
 
-**6. genspec Web UI (WASM)** 🟡 — v0.37 `wasm-playground.md`, `project_wasm_playground` (memory).
+**6. genspec Web UI (WASM/WASI)** 🔶 — v0.37 `wasi-build.md` (prototype, runs in a browser), `wasm-playground.md` (origin vision).
 
 **7. Doc site (Hugo, GH Pages)** ✅ v1 (v0.35) / 🔶 next wave — next-wave items
 (the W-series, with parked entries) are kept in `doc-site-wishlist.md`, **not
@@ -52,8 +52,9 @@ expanded here**. On the *published* roadmap we'll likely surface only the WASM
 **8. Core engine refactors (non-breaking)** ⬜ — v0.37 `ramblings/vision.md`. Pillars `V-scanner / V-builder / V-imodel` (sub-table below).
 - ✅ v0.36 [After-declaration annotation comments](features/comment-source-filtering.md) · (i)
 - ✅ v0.36 [Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md) · (i)
+- 🟡 v0.37 on-demand scanner
 
-**9. Wring out go-swagger backlog** 🔶 — `archive/backlog-go-swagger-20260608.md`.
+**9. Wring out go-swagger backlog**  ✅—  `archive/backlog-go-swagger-20260608.md`.
 - ✅ v0.35 [Prune unused models](features/prune-unused-models.md) · (iii) · #2639 (PR #50)
 - ✅ v0.35 [Definition-name auto-disambiguation](features/name-identity-disambiguation.md) · (iii) · #1734
 - ✅ v0.35 [Explicit additionalProperties control](features/additionalproperties-control.md) · (iii) · #2539/#3005
@@ -67,6 +68,8 @@ expanded here**. On the *published* roadmap we'll likely surface only the WASM
 - ✅ v0.36 [Shared swagger:parameters / swagger:response](features/shared-parameters.md) · (iii) · #2632
 - ✅ v0.36 [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · (iii) · go-swagger#3211
 - ✅ v0.36 [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · (iii) · #1913
+
+**9. Wring out go-swagger backlog continued (low priority/uncertain feature)** ⬜ — `archive/backlog-go-swagger-20260608.md`.
 - ⬜ v0.37 [Infer required from field shape](features/infer-required-from-shape.md) · (iii) · #3275 · TODO
 - ⬜ v0.37 [Per-operation field views](features/per-operation-projections.md) · (iii) · #1992 · low
 - ⬜ [Name-identity advanced](features/name-identity-advanced.md) · (iv) · low
@@ -83,9 +86,9 @@ expanded here**. On the *published* roadmap we'll likely surface only the WASM
 - ✅ v0.36 [Skip-jsonify-interfaces opt-out](features/skip-jsonify-interfaces.md) · (ii) · `Options.SkipJSONifyInterfaceMethods`
 - ✅ v0.36 [swagger:description / swagger:title overrides](features/swagger-description-override.md) · (ii)
 - ✅ v0.36 [DefaultAllOfForEmbeds](features/default-allof-for-embeds.md) · (ii) · `Options.DefaultAllOfForEmbeds`
-- ⬜ v0.37 [Example value coercion (verification)](features/example-values.md) · (i) · #1268/#2246 · verify
+- ✅ v0.36.3 [Example value coercion (verification)](features/example-values.md) · (i) · #1268/#2246 · verify
+- ⬜ v0.36.x [DiscoverAliasesAsTypes](features/discover-aliases-as-types.md) · (ii)
 - ⬜ v0.37 [Enum richer values](features/enum-richer-values.md) · (i) · TODO
-- ⬜ v0.37 [DiscoverAliasesAsTypes](features/discover-aliases-as-types.md) · (ii)
 - ⬜ [Bullet-list dash preservation](features/bullet-dash-preservation.md) · (iv)
 
 ---
@@ -327,7 +330,7 @@ splits, light/dark theme, then Repro-pack and Map-vis.
 
 ---
 
-## 6. genspec Web UI (WASM playground) — 🟡 shaping
+## 6. genspec Web UI (WASM playground) — 🔶 prototype runs in a browser
 
 **Goal.** WASM build of the scanner core + a JS runner (e.g. Vite) for
 the same three-zone UX as the TUI, published as a static asset.
@@ -351,38 +354,40 @@ The second point is small-but-real — not a major lever, but worth
 designing for from the start because it costs little extra and
 materially improves the quality of new tickets entering the queue.
 
-**Status.** Design rambling in `wasm-playground.md`; memory
-`project_wasm_playground` summarises. The hard case for the
-broader go-openapi WASM-playground pattern, because codescan needs
-`go/types` and package/import resolution.
+**Status — PROTOTYPE, on branch `wasi-build`.** It builds, and it runs: a
+browser tab scans a module the user picked, with no toolchain, no GOROOT
+and nothing leaving the machine. **The live plan is `wasi-build.md`**;
+`wasm-playground.md` is the origin vision and several of its guesses did
+not survive contact (see below).
 
-### Key design points (from the rambling)
+### What the prototype settled
 
-- **Real coupling is `packages.Load`, not "WASM can't do I/O".**
-  Everything below it (`go/parser`, `go/types`, scanner index,
-  builders, `go-openapi/spec`, JSON marshaling) already cross-compiles
-  to `js/wasm`.
-- **`Loader` seam** — native build → `packages.Load`; wasm build →
-  `go/parser` + `go/types` over in-memory source. Same abstraction as
-  v2's `DemandLoader` (Stream 8).
-- **Two senses of "imports":**
-  - *Special-semantics* imports (`time`, `encoding/json`, `strfmt`)
-    are recognised by name → no real types needed.
-  - *Drill-down* imports → real type info needed. User's own types are
-    in the editor; external drill-down via lazily-fetched, pre-published
-    `gcexportdata` blobs (static `fetch()` is allowed in WASM).
-- **The hard part is UX for multi-file + imports**, not the
-  type-checking.
+- **The target is WASI, not `GOOS=js`.** A WASI guest has a filesystem,
+  so the "inject an `fs.FS`" problem dissolves — the host mounts it.
+- **Real coupling was `packages.Load`, as the rambling said** — but the
+  fix was not a seam over it. There is no seam: the driver protocol is
+  exec-only. `internal/packages` is our own loader, at parity with
+  `packages.Load` across the fixture corpus.
+- **Host I/O is not the cost; type-checking dependencies is.** Filesystem
+  syscalls are under 2% of a WASI scan. Precomputed export data takes the
+  petstore from 7.3 s / 681 MB to 1.0 s / 138 MB.
+- **`gcexportdata` blobs work — for unannotated packages only.** A library
+  that declares meaning in comments (`strfmt`) cannot be precomputed; the
+  only way to resolve it faithfully is its source, i.e. an uploaded
+  vendored tree.
+- **The hard part is still UX**, as predicted — the front-end is a
+  scaffold and lags the TUI.
 
 ### Open sub-items
 
 | Tag | Item | Status | Notes |
 |-----|------|--------|-------|
-| W-loader-seam | Introduce `Loader` seam in scanner (same shape as v2 `DemandLoader`) | ⬜ | becomes free once Stream 8 lands |
-| W-wasm-build | `GOOS=js GOARCH=wasm` build of the scanner + runner | ⬜ | depends on W-loader-seam |
-| W-ux | Three-zone web UX (source / spec / diagnostics) | ⬜ | mirrors TUI; reuse layout decisions |
-| W-import-fetch | Lazy `gcexportdata` blob fetch for known stdlib + go-openapi imports | ⬜ | publishes blobs on the doc-site (Stream 7) |
-| W-degrade | Diagnostic-driven graceful degrade for arbitrary imports | ⬜ | falls back to "paste source / use TUI" |
+| W-loader-seam | Own the package loader (`internal/packages`) | ✅ | 143/143 vs `packages.Load`; no seam existed to reuse |
+| W-wasm-build | `wasip1/wasm` artifact (`cmd/genspec`) | ✅ | 21 read-only WASI imports, pinned by a test |
+| W-ux | Web UX (source / spec, options overlay, upload) | 🔶 | scaffold works; no highlighting, no cross-refs, lags the TUI |
+| W-import-fetch | Precomputed export data for dependencies | 🔶 | works; **cannot cover annotated libs** — those need source |
+| W-vendor | Uploaded vendored tree for annotated dependencies | ⬜ | the only faithful route; resolver already reads `vendor/` |
+| W-degrade | Diagnostic-driven graceful degrade for arbitrary imports | ✅ | `scan.synthesized-import`, Hint vs Warning by intent |
 | W-privacy | Privacy invariant — no upload, no telemetry | ⬜ | enforced by static-only deploy |
 | W-report | "Report issue" rail — pack annotated source + diagnostics + spec output + browser metadata into a pre-filled GitHub issue link | ⬜ | mirrors Stream 5 / Repro-pack; feeds cleaner reports into Stream 9's intake |
 | W-deploy | Deploy as a real playground page on the doc site (Stream 7) | ⬜ | this is the "earns its keep" condition; without deploy it's only a PR stunt |

@@ -1,7 +1,35 @@
 # WASM-based Playgrounds for go-openapi — and the codescan case
 
-Date: 2026-06-01
-Status: 🟡 design / rambling — "I have to reflect more on this" (Fred)
+Date: 2026-06-01 · **superseded 2026-08-02**
+Status: 📚 origin vision — kept for provenance. **The live plan is `wasi-build.md`.**
+
+> [!IMPORTANT]
+> Superseded. A prototype now exists and runs in a browser; **the live plan is `wasi-build.md`**.
+> Read this for how the thinking got there, and the section below for what it got right and wrong.
+
+## What this document got right, and wrong
+
+Written before any of it was built, so it is a record of reasoning rather than of behaviour.
+
+**Held up.** The real coupling is `packages.Load`, not "WASM can't do I/O" (§3) — everything below it
+cross-compiles untouched. Pre-published `gcexportdata` blobs are the answer for dependency types (§5b).
+The hard part is the multi-file/import UX, not the type-checking (§6). The TUI shares the core and was
+worth building first (§7).
+
+**Did not.**
+
+- **The target is WASI, not `GOOS=js`.** §4 assumed `js/wasm` and an in-memory importer. A WASI guest
+  has a real filesystem, so the host mounts one and the "inject sources" problem dissolves.
+- **There is no `Loader` seam to introduce** (§4). `go/packages` has no injectable driver — the protocol
+  is exec-only — so the loader had to be written outright, as `internal/packages`.
+- **`NewFromBytes` (Phase 2) is not the shape.** Nothing is passed as bytes; the guest reads a filesystem
+  the host provides.
+- **Synthesize-from-usage is a fallback, not a tier** (§5a). It exists, it is diagnosed, and it loses
+  structure — fine for degradation, wrong as a default.
+- **Export data cannot cover annotated libraries.** §5b hoped `strfmt` blobs would resolve `strfmt.*`.
+  They do not: strfmt declares its formats in *comments*, which export data drops. Only its source
+  carries them, so a vendored upload is the honest route — closer to §8's note (F) than to §5b.
+- **The binary-size guess was low** (§9): about 14 MB, 3.6 MB compressed, before any dependency data.
 
 ## TL;DR
 

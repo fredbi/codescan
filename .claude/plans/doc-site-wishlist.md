@@ -183,6 +183,32 @@ A test/CI step asserting every annotation in the grammar has at least one
 example package + a tutorial anchor — so new annotations can't ship
 undocumented. Natural extension of the golden harness.
 
+### W18 — MD051 false positives on same-page anchors 🟢 (noted 2026-08-01)
+The markdown linter (`markdown_lint`, rule MD051 "link-fragments") flags every
+same-page link to a **colon-bearing heading** as unresolved, because it derives
+the anchor differently from Hugo. Both known instances are correct as written and
+render fine on the site:
+
+```text
+model-definitions.md:37     [`swagger:strfmt`](#swaggerstrfmt)      ## swagger:strfmt
+routes-and-operations.md:36 [`swagger:parameters`](#swaggerparameters)  ## swagger:parameters
+```
+
+Since almost every annotation heading on the site carries a colon, this is the
+default shape for an intra-page cross-reference — and the pattern will spread as
+tutorials grow. **The cost is not the noise, it's the masking**: a genuinely
+broken fragment is indistinguishable from these, so nobody will trust the rule
+enough to act on it (exactly the failure mode W14 exists to prevent).
+
+Options, cheapest first: disable MD051 for `docs/doc-site/**` in whatever config
+the linter reads; teach the analyzer Hugo's anchor derivation (it is the
+go-fred-mcp markdown analyzer, ours to fix); or give the headings explicit IDs.
+The middle one is the only one that keeps the rule useful.
+
+Related: the same run reports `broken-relative-link` for every `{{% relref %}}`
+shortcode — same class of Hugo-unaware resolution, same masking problem, and
+much higher volume. Worth fixing together.
+
 ### W9 — Generate the reference tables from the grammar 🔴 (⏸ parked 2026-06-23)
 **⏸ Parked as unrealistic** — large lexer/parser-interaction digression; W14
 (coverage gate) covers the cheap part of the same goal. Kept here for the record,

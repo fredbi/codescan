@@ -10,7 +10,8 @@ prev: "§3.7"
 
 # `DiscoverAliasesAsTypes` — opt-in pre-R6 alias discovery
 
-**Status:** ⬜ open.
+**Status:** ⬜ open · spec refreshed 2026-08-02 against the post-Q32 landscape (the old
+"out of scope" note was stale — see the end).
 
 **Origin.** W3 alias workshop Q-E close-out (2026-06-10). A core-product
 enhancement with no dedicated stream; it rides whichever stream next touches the
@@ -59,11 +60,48 @@ Interactions:
   decl carries its own `definitions` entry unconditionally (R2 in the workshop
   ledger), and this option does not alter that.
 
-**Out of scope.** The parameters and responses builders have not yet received the
-R6 treatment (Q7 / Q12 work, fix-quirks Phase C1/C2). When that lands, the same
-option should govern those layers uniformly — the gate moves from
-schema-builder-internal to a cross-layer concern. Until then this option only
-affects the schema builder.
+**~~Out of scope.~~ Superseded 2026-08-02 — the cross-layer landscape is now known.**
 
-**When to revisit.** First time a user requests "I want every alias to be a type"
-without per-decl annotation churn, or as part of an Options surface review.
+The previous revision said "the parameters and responses builders have not yet received the R6
+treatment … until then this option only affects the schema builder". That is **stale**: all three
+builders now state and implement the shared contract. Each README says so
+(`parameters/README.md` §alias-handling: *"shares the alias-handling contract with the schema and
+responses builders"*; same in `responses/README.md`), and the gate exists in all three:
+
+| builder | R6 gate | use-site handler |
+|---|---|---|
+| schema | `schema.go:440` (`refModel`), `schema.go:460` (dissolve) | `buildAlias` |
+| parameters | `parameters.go:445` (`refModel`), `:487` (`$ref`) | `buildFieldAlias` |
+| responses | `responses.go:390` (`refModel`), `:431` (`$ref`) | `buildFieldAlias` |
+
+So the option is **already a cross-layer concern**, not a schema-builder-internal one, and it must
+be honoured at three independent sites rather than one.
+
+**What the Q32 work (`fix/strfmt-dispatch-symmetry`) adds to the design:**
+
+1. **`buildAlias` has four callers**, not one — `buildFromType`, the `swagger:allOf` walk, the
+   interface-side embed walk, and the stdlib-specials routing. An option that changes "does this
+   alias keep its identity" has to be evaluated wherever the dissolve happens, which is all four,
+   plus the two sibling `buildFieldAlias` implementations.
+2. **The dissolve must be reached with the declaration already in hand.** The lookup used to sit
+   *below* the `TransparentAliases` early return in all three builders, so that mode dissolved
+   without ever reading the decl. It is now above it everywhere — which this feature depends on,
+   since `DiscoverAliasesAsTypes` is precisely a decision about a declaration taken at a use site.
+3. **There is now a precedent for a cross-layer alias concern**: `common.Builder.ClassifierAliasStrfmt`
+   lives on the shared builder because all three needed identical behaviour before their dissolves.
+   A `DiscoverAliasesAsTypes` gate belongs in the same place, for the same reason — three copies of
+   the rule is how the strfmt defect happened.
+
+**Interactions — one correction.** The previous revision said `TransparentAliases=true` "always
+wins … so this option is inert under Transparent (the dissolve happens before the R6 gate is
+consulted)". The *conclusion* still holds — Transparent dissolves at every use site by definition —
+but the *reason* given is no longer accurate: the decl lookup now precedes the Transparent return, so
+the gate is reachable there. Inertness under Transparent is therefore a **choice the implementation
+must make explicitly**, not something the control flow enforces for free.
+
+**Effort re-estimate.** Higher than the previous revision implied: six sites, not one, and the gate
+belongs on `common.Builder` rather than in `schema.buildAlias`. Against that, the plumbing it needs
+(decl-before-dissolve, in all three builders) now exists.
+
+**When to revisit.** First time a user requests "I want every alias to be a type" without per-decl
+annotation churn, or as part of an Options surface review. Still no user demand recorded.

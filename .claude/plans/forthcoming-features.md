@@ -74,6 +74,7 @@ title → file · stream · origin · issues. Markers: **low** = deferred low pr
 - ⬜ [Column precision beyond ASCII](features/column-precision-unicode.md) · Stream 11 · (i) · 🔷 v0.38
 - ⬜ [Godoc-identifier prefix on `swagger:operation`](features/godoc-identifier-prefix.md) · Stream 10 · (i) · 🔷 v0.39
 - ⬜ [Enum richer values](features/enum-richer-values.md) · Stream — · (i) · **TODO**
+- ⬜ [Standard formats only (no extended widths)](features/standard-formats-only.md) · Stream — · (ii) · **low**
 - ⬜ [Example value coercion (verification)](features/example-values.md) · Stream — · (i) · go-swagger#1268/#2246 · **verify**
 - ⬜ [Property-based Block generator](features/property-based-block-generator.md) · Stream 2 · (i)
 - ✅ [Skip-jsonify-interfaces opt-out](features/skip-jsonify-interfaces.md) · Stream — · (ii) · 🔷 v0.36

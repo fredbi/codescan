@@ -15,9 +15,9 @@ We want to drastically transform the codescan package to make it:
 * easier to maintain and debug
 * faster and more memory-efficient
 * easier to document
-* infer more information from coe
+* infer more information from code
 
-After the restructuration of the repo into smaller packages, this should be possible to reach in progressive steps.
+After the restructuration of the repo into smaller packages [done ✅], this should be possible to reach in progressive steps.
 
 At some point, breaking changes will inevitably have to be introduced. This will be the start of a v2 release.
 
@@ -27,17 +27,20 @@ The objective of v2 are:
 * to provide LSP support
 * to provide a standalone CLI to generate specs
 
+NOTE: current stance is that we are trying to find a path for the project that doesn't need a v2.
+So far, large sections of the original project have been rewritten from the ground up without breaking changes.
+For the moment, we think this approach can be pushed even further, possibly even with OAIv3 support.
 ## Step-by-step approach
 
-We assume that our starting point is the refactored package.
+We assume that our starting point is the refactored package [done ✅].
 
-1. Replace regexp by internal grammar-based parser
-2. Replace global AST index by on-demand parser with cache
-3. Introduce a flexible rendering layer
+1. Replace regexp by internal grammar-based parser [done ✅]
+2. Replace global AST index by on-demand parser with cache [design 🟡]
+3. Introduce a flexible rendering layer [design 🟡]
 
 ### Grammar-based parser
 
-The objective is to entirely drop regexp usage from our parser.
+The objective is to entirely drop regexp usage from our parser. [done ✅]
 
 * Performance is an important issue, but first and foremost, regexp are brittle and hard to maintain.
   We had one problem and we introduced 62 regexps. Now we have 62 problems.
@@ -88,7 +91,7 @@ This makes the "spec" builder particularly hard to follow, with its stafeful exp
 
 See [the preliminary study](index-builder-statefulness.md).
 
-Design:
+Design: [design 🟡]
 * we want a lightweight scan (just syntax, not types) that first scans for annotations
 * further usage by builder would ask for full parsing on demand
 * we should not have to run this loop any longer and keep the state or maintain an index of ALL
@@ -103,7 +106,7 @@ This lib internals are deeply entangled with go-openapi/spec types. This comes w
 Objectives: we want to decouple the parsing & analysis part from the rendering part.
 Ideally we want to be able to generate _anything_ from our "OpenAPI-enabled" code scanner.
 
-Design:
+Design: [design 🟡]
 * we need to introduce a pivot model that captures all things detected by the emitter
   then eventually render it as go-openapi/spec object (or something else that marshals to JSON)
   then output as JSON or YAML.
