@@ -14,7 +14,7 @@ prev: "§14.1"
 alias-driven naming / qualified author refs are demanded.
 
 **Origin.** (iv) deferred refinement on the landed name-identity / cyclic-`$ref`
-engine — see [name-identity-disambiguation](name-identity-disambiguation.md) as
+engine — see [name-identity-disambiguation](archive/name-identity-disambiguation.md) as
 the shipped parent. Designed-but-unbuilt enhancements left by that engine.
 Cross-reference: `.claude/plans/name-identity-cyclic-ref.md` §9.3 (import
 aliases), §10/W3 (many-to-one), §13/ST3 (qualified refs), §9.5+K5 (per-level
@@ -45,6 +45,6 @@ provenance).
   per-level provenance if a genuine multi-level hierarchical case warrants it.
 
 **When to revisit.** When alias-driven naming or qualified author refs are
-demanded, or alongside [prune-unused-models](prune-unused-models.md) (pruning dead
+demanded, or alongside [prune-unused-models](archive/prune-unused-models.md) (pruning dead
 colliders *before* reduce yields better names — a dead `b.Test` no longer taxes a
 live `c.Test` into a qualified name).

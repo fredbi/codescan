@@ -19,12 +19,39 @@ Rules for this file:
 - claims are verified against goldens or a probe before being listed, not
   inherited from an older document.
 
-Last verified: **2026-08-03** on branch `fix/more-quirks`.
+Last verified: **2026-08-17** (pre-v0.36.4 sweep, re-checked at `5e4cf04d`). One genuinely new quirk since
+2026-08-05: **Q49**, the `swagger:meta` group mix-up, found and fixed the same day in PR #119. Everything
+else that shipped in between was already-registered work — Q37 closed with PR #94, and PR #99 / #89 were
+fixes, not findings. Two things found in that window are
+deliberately *not* here, because this file is the **scanner** register and neither is a scanner defect:
 
-- FIXED: Q31, Q32, Q34, Q35, Q36, Q38, Q39, Q40, Q41, Q42, Q43, Q44.
+- `-color=always` cannot colour a run whose stdout is redirected — `archive/genspec-cli.md` §Open 4. A CLI defect,
+  with the one-line fix and the reason it wants a deliberate decision written up there.
+- Two extractor defects in the benchmark corpus unpacker (a guard with a platform-dependent verdict, and a
+  measurement gate that resolved before it validated) — `benchmarks-cleanup.md` §6, both fixed in PR #118.
+
+**Commit hashes rewritten 2026-08-17.** 28 of the 37 hashes this file cited were **pre-rebase and resolved
+to nothing** — the branches they were written on (`fix/strfmt-dispatch-symmetry`, `fix/coverage-quirks`, …)
+were rebased on merge, so every "FIXED (`abc1234`)" named a commit no ref contained. All 28 were matched to
+their master equivalents by commit subject and replaced (52 citations). One, `8e20d2f`, is not an object in
+this repository at all and was left alone — it predates the rewrite or belongs to another repo.
+
+**Rule for whoever closes the next quirk:** cite the hash **after** the branch merges, not the one you
+committed on. A register whose evidence does not resolve is worse than one that names a PR — if the fix is
+still on a branch, name the branch and the PR, and come back for the hash.
+
+Previous verification: **2026-08-05** on branch `fix/coverage-quirks`.
+
+- FIXED: Q31, Q32, Q34, Q35, Q36, Q37, Q38, Q39, Q40, Q41, Q42, Q43, Q44, Q46, Q47, **Q49**.
+- 🟦 Documented, kept deliberately: Q48 (walk arms Swagger 2.0 cannot reach).
+- Q46–Q48 came out of the coverage sweep (`b06eae8e`) — see each entry's provenance note.
 - ⛔ WON'T DO: Q33 (promoted marshaller on an embed — read its Resolution before reopening).
-- Parked: Q37 (ordering fixed; the degraded-graph witness still needs `StubStdlib`, now over a
-  smaller surface since Q38 widened the canonical recognizer set).
+- ✅ Q37 UNPARKED 2026-08-06, NARROWED then **RESOLVED 2026-08-08**, merged as PR #94 (`9376e2e1`): the
+  declaration-contract half landed in `master` (PR #90); the `responses.go:327` residual turned out to
+  be **unreachable code**, not a soft gate, masking a wider hole one level up (a `swagger:response` on
+  an alias to any struct-underneath stdlib type emitted no schema at all) — closed by hoisting
+  `ApplyStdlibSpecials` into `responses.buildNamedType`. The "nine hand-rolled subsets" are eight
+  legitimate refusal guards; see the entry's correction note.
 - 🔍 Latent, deferred super-niche: Q45 (Q33's composition premise vs. a plain inlining embed).
 - §2–§5 last verified 2026-07-30 · repo side synced by PR #68.
 
@@ -32,7 +59,7 @@ Last verified: **2026-08-03** on branch `fix/more-quirks`.
 
 ## 1. Open — needs a decision
 
-### Q31 — ✅ FIXED (`bc03875`) — `json:"-"` handling now matches encoding/json
+### Q31 — ✅ FIXED (`53747caa`) — `json:"-"` handling now matches encoding/json
 
 **Status:** FIXED on `fix/strfmt-dispatch-symmetry`, awaiting review. The "decision open" that held
 this since 2026-07-30 dissolved once `swagger:omit` shipped (PR #67): being faithful to Go no longer
@@ -74,16 +101,16 @@ re-declaration, which it does not do. All corrected.
 
 **Blast radius:** 3 goldens, all restoring a property that had been evicted, plus prose.
 
-### Q32 — ✅ CLOSED (`af0307d`, `7b04f1e`, `72f302e`) — classifier annotations on an ALIAS declaration
+### Q32 — ✅ CLOSED (`1b0e7b2f`, `5ad1df18`, `ed9897cb`) — classifier annotations on an ALIAS declaration
 
 **Status:** CLOSED on `fix/strfmt-dispatch-symmetry`, awaiting review. Every classifier annotation on
 an alias declaration was dropped silently; each has now been fixed or, where unfixable, made loud.
 
 | annotation | outcome |
 |---|---|
-| `swagger:strfmt` | **fixed** `af0307d` — honoured at every use site, in all three builders |
-| `swagger:type` | **fixed** `7b04f1e` — every form; brought a SimpleSchema legality gate with it |
-| `swagger:enum` | **diagnosed** `72f302e` — unfixable by construction, so it now says so |
+| `swagger:strfmt` | **fixed** `1b0e7b2f` — honoured at every use site, in all three builders |
+| `swagger:type` | **fixed** `5ad1df18` — every form; brought a SimpleSchema legality gate with it |
+| `swagger:enum` | **diagnosed** `ed9897cb` — unfixable by construction, so it now says so |
 | `swagger:default` | left this entry entirely: it never worked anywhere → [Q35](#q35), retired |
 
 > **The live account is `alias-override-symmetry.md` + its ledgers.** Two witness families —
@@ -233,7 +260,7 @@ Ambiguity and an outer `MarshalJSON` are both detectable from `go/types` (`types
 **Blast radius, when it is decided:** every `time.Time` embed in every scanned codebase turns from an
 object into `{string, date-time}`. That is faithful and it is a visible break.
 
-**Related:** `go127-uuid.md` §Appendix (where it surfaced). Note the go1.27 work
+**Related:** `archive/go127-uuid.md` §Appendix (where it surfaced). Note the go1.27 work
 does **not** move this: adding identity-based `recognizeStdUUID` to the canonical
 safe set changes nothing here, because the embed never reaches a recognizer at all
 (verified against `go127_uuid_spec.json` — `Embedder` still emits
@@ -306,7 +333,7 @@ cheaper move is to keep one rule and record why it might be wrong.
 **What would reopen it:** a real report where a plain (non-`allOf`) embed of a marshaller type
 produces a spec its own generated client cannot round-trip.
 
-### Q34 — ✅ FIXED (`16de9fa`) — decl arm dropped a sequence's format; the items-vs-whole rule was an allowlist
+### Q34 — ✅ FIXED (`9d92874d`) — decl arm dropped a sequence's format; the items-vs-whole rule was an allowlist
 
 **Status:** FIXED on `fix/strfmt-dispatch-symmetry`, awaiting review. Kept here until the branch
 merges, since the entry is what the fix is judged against.
@@ -341,7 +368,7 @@ type or to the item is a different problem, and I have to admit that one is hard
 **Blast radius:** exactly one pre-existing golden moved — `Signature [64]byte` annotated `password`
 emitted an array of 64 password strings and now emits a password string.
 
-### Q35 — ✅ FIXED (`d4093c3`) — `swagger:default` retired as a deprecated no-op
+### Q35 — ✅ FIXED (`4de3a6e3`) — `swagger:default` retired as a deprecated no-op
 
 **Status:** FIXED on `fix/strfmt-dispatch-symmetry`, awaiting review. Decision taken 2026-08-02
 (Fred): deprecate, do not implement.
@@ -378,7 +405,7 @@ the bare form the doc-site documented for years.
 **Doc site:** reference page, tutorial section, annotation index and context matrix rewritten; the
 published example (bare form on a `var` — a placement no builder reads) removed rather than fixed.
 
-### Q36 — ✅ FIXED (`94845da`) — decl-site values were coerced against an empty type
+### Q36 — ✅ FIXED (`b72a43d2`) — decl-site values were coerced against an empty type
 
 **Status:** FIXED on `fix/strfmt-dispatch-symmetry`, awaiting review.
 
@@ -419,7 +446,7 @@ side by side.
 type) vs `enum:` (keyword, members written literally, typed from the schema it sits on) — a
 side-by-side table in the enumerations tutorial, cross-linked from both reference pages.
 
-**Follow-up landed in `e28e6c0`** (Fred: *"what if RecoerceDeclValues encounters an error? Shouldn't
+**Follow-up landed in `23a9d1eb`** (Fred: *"what if RecoerceDeclValues encounters an error? Shouldn't
 we emit a diagnostic warning?"*). Probing that question found the same silence in three shapes:
 
 | site | uncoercible value | was | now |
@@ -435,13 +462,70 @@ and cannot warn — which makes the `typ == "string"` early return a correctness
 optimisation. Parameters and headers already reported via their error sink; only the schema paths
 were silent.
 
-### Q37 — ⏸️ PARKED — identity recognizers run *after* the declaration lookup that can fail without them
+### Q37 — ✅ RESOLVED 2026-08-08 (`9376e2e1`, PR #94) — identity recognizers ran *after* the declaration lookup that could fail without them
 
-**Status:** PARTLY FIXED 2026-08-02 · **the ORDERING is now correct at all three field sites**
-(`80b0fc5`, see [Q39](#q39) tier 3) — the recognizers run before the lookup. What remains is
-witnessing the degraded case for `time.Time` / `json.RawMessage`, which needs a graph that omits
-their package: **still parked on `Options.StubStdlib`.** Audited on `fix/strfmt-dispatch-symmetry`; fix
-prototyped there, measured, and reverted.
+**Status:** PARTLY FIXED 2026-08-02 (`7ff038a5`, see [Q39](#q39) tier 3) · **UNPARKED 2026-08-06** ·
+**NARROWED 2026-08-08**. **Read the 2026-08-06 update at the end of this entry before acting on
+anything above it**, then this correction to it:
+
+> The 2026-08-06 update's items 1–3 are settled. The witness graph is not merely buildable — the
+> declaration-contract fix landed in `master` (PR #90): the strict lookup sites ask
+> `ScanCtx.SourcelessPackage()` and render from the type with a `scan.sourceless-type` Warning
+> instead of failing, so the three failures in that update's table are **no longer failures**. Item
+> 3's never-run test now exists and passes — `TestSourcelessType_DegradesInsteadOfFailing`, subtest
+> *"a type the recognizers answer for warns about nothing"*, which is exactly the `time.Time`-in-a-
+> syntax-less-package case.
+>
+> **What is left is the two residuals below, both re-verified against `master` on 2026-08-08:**
+> `responses.go:327` still calls `IsStdTime` on a declaration fetched at `:315` (soft gate ⇒ a
+> `swagger:response` on a named `time.Time` can lose its `date-time` **silently**), and the
+> hand-rolled recognizer subsets are still **nine** call sites across parameters/responses. Both are
+> now witnessable without `StubStdlib` and neither can fail a scan.
+>
+> 🛠 **The `responses` residual is being addressed in parallel (2026-08-08) — do not pick it up here.**
+> It is not part of the `CompiledDependencies` derisking, which needs only that the failure mode be
+> non-fatal, and that already landed.
+
+#### ✅ Correction 2026-08-08 (branch `more-auto-detect`) — both residuals resolved, and the first was misdiagnosed
+
+**`responses.go:327` was not a soft gate. It was unreachable.** `IsStdTime(decl.Obj())` asks whether
+the response type IS `time.Time`, and `time.Time` is a **struct** underneath — so it always took the
+`case *types.Struct` arm and could never arrive at the `default` arm where the check sat. Coverage
+over the whole suite confirms it: that block's max hit count is **0**, while its neighbours (`:315`,
+`:333`, `:340`, `:345`) are all exercised. Nothing was silently losing `date-time` through it, because
+nothing ever entered it; `type Stamp time.Time` was — and still is — caught by the written-RHS
+redirect above.
+
+**The real hole was one level up, and wider.** `responses.buildNamedType` never consulted the
+canonical recognizers at all: it refused `any`/`error`, then dispatched on the underlying shape. So
+every recognized type that is a **struct underneath** was read as a response struct whose fields
+become headers. Witness: `type Stamp = time.Time` under `swagger:response` emitted
+`{"description": ""}` — no schema whatsoever — while the defined-type spelling rendered
+`{string, date-time}`. Same for `= big.Int` / `= big.Rat`. `io.Reader` and `json.RawMessage` escaped
+only because their underlyings are an interface and a slice, so they reached the delegating arm.
+
+**Fix:** hoist `ApplyStdlibSpecials` to the top of `responses.buildNamedType`, after the `any`/`error`
+refusal and before the written-RHS redirect and the shape dispatch — the schema builder's order, for
+the schema builder's reason. The dead `IsStdTime` branch goes with it. Witnessed by
+`TestResponseSpecials` over `fixtures/enhancements/response-specials/`, A/B'd against the unfixed
+builder.
+
+**The "nine hand-rolled subsets" count is retired: eight are legitimate guards, the ninth was the
+dead line.** They are refusals, not recognizers, and they must keep running *ahead* of the canonical
+set rather than being folded into it:
+
+| site | check | why it is not a recognizer |
+|---|---|---|
+| `parameters.buildNamedType` / `buildAlias` | `IsAny \|\| IsStdError` | hard error — a parameter *set* cannot be `any`/`error` |
+| `responses.buildNamedType` / `buildAlias` | `IsAny \|\| IsStdError` | hard error — same, for a response |
+| `parameters.buildNamedField` / `buildFieldAlias` | `IsStdErrorType` | skip the field with a diagnostic; the schema builder's `{type: string}` would be a lie about what a client sends |
+| `parameters.buildFieldAlias` / `responses.buildFieldAlias` | `IsAny` | empty schema — same effect as `recognizeAny`, harmless pre-delegation short-circuit |
+
+`buildNamedField` in both builders already calls `ApplyStdlibSpecials`. `parameters.buildNamedType`
+needs no canonical set: a `swagger:parameters` declaration must be a struct, so its `default` arm is
+correctly an error.
+
+**Q37 can close** once this lands.
 
 `resolvers.IsStdTime` answers from `(package name, type name)` alone — it never reads the
 declaration:
@@ -530,6 +614,70 @@ package graph without `io` no longer produces
 That is a widening of the canonical set, **not** the structural fix. The eight hand-rolled subsets
 in parameters and responses are still there, and the `time.Time` / `json.RawMessage` half still has
 no witness without `StubStdlib`. Q37 stays parked; it is simply parked over a smaller surface.
+
+#### Update 2026-08-06 — unparked, and the new evidence is NOT what it first looked like
+
+Written on `on-demand-scanner`, against `feat/source-loader`. Three things changed; only the first
+is about Q37.
+
+**1. The parking reason is gone.** This entry is parked because the defect is invisible with a full
+package graph, and the truncated graph that exposes it required `Options.StubStdlib` from another
+branch. The loader now produces exactly that graph — **types complete, syntax absent** — in two
+*shipping* configurations, `Options.CompiledDependencies` and `Options.ExportData`. No stubbing, no
+synthetic degradation. `internal/integration/loader_agreement_test.go` runs the corpus under both.
+**The witness this entry has waited for is buildable today.**
+
+**2. But the three failures that configuration surfaces are NOT this quirk.** They look like it and
+they are not, and the difference decides who fixes them:
+
+| target | type | why it fails |
+|---|---|---|
+| `bugs/2248` | `time.Duration` | only `time.Time` is recognised — `Duration` has no recognizer |
+| `enhancements/opaque-streams` | `io.Writer` | **deliberately** excluded from `opaqueStreamTypes` |
+| `goparsing/go123` | `reflect.Type` | no recognizer |
+
+In all three there is **nothing to hoist**: ordering is irrelevant when no recognizer exists. With a
+full graph they fall through to a structural walk that reads source; with export data there is no
+source and the walk has no fallback, so the scan **fails** rather than degrading. That is the
+declaration contract — which this entry's own audit predicted when it said "the real fix is larger
+than a reordering". Note `io.Writer`'s exclusion is a considered decision, not an oversight: "a sink
+the caller writes into is not something that travels on the wire."
+
+**3. Q37's own case is now testable, and is expected to PASS.** At `parameters.go:359` and
+`responses.go:399` the canonical `ApplyStdlibSpecials` now runs *before* `DeclForType` — the
+2026-08-02 fix, verified in place 2026-08-06. So a `time.Time` field in a syntax-less package should
+recognise without ever asking for a declaration. **That test has never been run.** Running it either
+confirms the fix and closes this half, or finds a residual site — and it costs a fixture now, not a
+branch.
+
+**What genuinely remains open**, re-verified 2026-08-06:
+
+- **The third site still recognises after the lookup.** `responses.go:325` is still
+  `d := decl.Obj(); if resolvers.IsStdTime(d)`. Soft gate, so it degrades rather than erroring — but
+  under export data a `swagger:response` on a named `time.Time` loses its `date-time` **silently**.
+  That is the worst failure shape available and it now has a reachable path.
+- **The hand-rolled subsets are still eight-ish.** `IsAny` / `IsStdError` / `IsStdTime` /
+  `IsStdErrorType` appear at nine call sites across parameters and responses, while schema uses the
+  canonical set throughout. These builders normally delegate to the schema sub-builder, which
+  supplies the canonical set — and under a truncated graph **the delegation is exactly what stops
+  working**. So "give parameters and responses the canonical set" is now testable too.
+
+**The WASI side cannot answer this yet** (2026-08-06). A vendored dockerctl scans in 3.9 s there, and
+near-instantly on rescan — but that corpus cannot reach family 1 at all: `time.Duration` appears in
+106 files under `client/` and **none** under `models/`, and its generated models are JSON-shaped
+scalars carrying no stdlib named types. So the green run is not evidence either way. The deciding
+question — whether stdlib arrives as source or as export data, which is what decides whether
+types-without-syntax ever occurs there — is waiting on better diagnostics UX on `wasi-build` before
+it can be checked. Do not read the playground's success as clearing this entry.
+
+**A hazard the fix must not create.** `on-demand-scanner` moved three builder sites onto
+`EntityDecl.WrittenRHS`, and `schema.go:231` falls back to `tpe.Underlying()` when it returns false.
+Today that branch is unreachable — every `EntityDecl` is built from an AST walk, so the scan fails
+loudly first. The moment the declaration contract lets `FindDecl` return a declaration whose syntax
+half is absent, these loud failures become a **silent peel**: `type Stamp time.Time` in a syntax-less
+package renders as a struct instead of `format: date-time`, because `Underlying()` discards exactly
+the named layer the recognizer keys on. Hoisting recognizers above the lookup is part of what
+prevents that — a recognised type never asks for a declaration at all.
 
 ### Q38 — ✅ FIXED (`1d5ce79`) — stdlib IO interfaces had no recognizer, so they were drilled and leaked into the spec
 
@@ -630,7 +778,7 @@ override control and a `WriterModel` pinning `io.Writer`'s exclusion.
 
 **Half (c) is now partly addressed, and [Q37](#q37) with it** — see the Q37 note.
 
-### Q39 — ✅ CLOSED (`e5309a5`, `1b19e67`, `e36d211`, `5156358`, `80b0fc5`, `1ec0f94`) — the three builders kept private copies of shared rules, and they drifted
+### Q39 — ✅ CLOSED (`4779aa09`, `3407a141`, `0fd15d4d`, `3848dac9`, `7ff038a5`, `361e2f29`) — the three builders kept private copies of shared rules, and they drifted
 
 **Status:** CLOSED 2026-08-02 · all three tiers done · recorded from three instances verified in
 one session, closed after six. This is a **generator of quirks**, not a single defect: each instance below was found
@@ -645,9 +793,9 @@ it when they stop.
 
 | rule | schema | parameters / responses | how it was caught |
 |---|---|---|---|
-| honour a classifier before the alias dissolve | `buildAlias` | own `buildFieldAlias`, each with the same defect | only by the SimpleSchema fixture slice — the schema-level fix looked complete ([Q32](#q32), `af0307d`) |
+| honour a classifier before the alias dissolve | `buildAlias` | own `buildFieldAlias`, each with the same defect | only by the SimpleSchema fixture slice — the schema-level fix looked complete ([Q32](#q32), `1b0e7b2f`) |
 | stdlib identity recognizers | one canonical `applyStdlibSpecials` set | **eight** hand-rolled subsets, differing per function | audit ([Q37](#q37), table there) |
-| diagnose an uncoercible `default:`/`example:` | nothing — silent | already had an `errSink` | probing Fred's question ([Q36](#q36) follow-up, `47710cf`) |
+| diagnose an uncoercible `default:`/`example:` | nothing — silent | already had an `errSink` | probing Fred's question ([Q36](#q36) follow-up, `23a9d1eb`) |
 
 Note the third row runs the other way: schema was the one missing the behaviour. This is not "the
 other two are behind"; it is three implementations with no shared contract.
@@ -670,13 +818,13 @@ a fixture slice that happened to exercise the right position, an audit done for 
 reviewer's question. The cost is not the individual bugs but that **a fix verified on one builder
 reads as complete**, which is precisely how [Q32](#q32) nearly shipped half-done.
 
-**Precedent for the fix.** `common.Builder.ClassifierAliasStrfmt` (`af0307d`) put one such rule on
+**Precedent for the fix.** `common.Builder.ClassifierAliasStrfmt` (`1b0e7b2f`) put one such rule on
 the shared builder because all three needed identical behaviour before their own dissolves. That is
 the shape: the rule moves to `common`, the three call it.
 
 ---
 
-#### Update 2026-08-02 — detector built (`e5309a5`), first factorization done (`1b19e67`)
+#### Update 2026-08-02 — detector built (`4779aa09`), first factorization done (`3407a141`)
 
 Fred's hypothesis held: *"now that all the expected behavior is well locked, Q39 should fall more
 easily."* The conformance suite took about twenty minutes to build, because every shape in it already
@@ -688,7 +836,7 @@ complete: `swagger:type` on an alias reached the non-body branch of both alias f
 the body one. `swagger:strfmt` on the same alias was fine, because its classifier sits above the
 branch — two annotations fixed together, diverging one branch apart.
 
-**Then it made the factorization safe.** `1b19e67` replaced both hand-written `buildFieldAlias`
+**Then it made the factorization safe.** `3407a141` replaced both hand-written `buildFieldAlias`
 walks with one shared `schema.BuildFieldAlias`: **158 lines of duplicated control flow became 13.**
 Most of each walk was re-implementing what it delegated to — the schema builder already applies the
 classifiers, honours `TransparentAliases`, and dissolves. Handing it the ALIAS rather than the
@@ -710,7 +858,7 @@ a response header under that mode.
   the root cause above. Comparing them needs a declared projection rather than equality; mixing them
   in would bury real drift under expected difference. A second suite could cover them that way.
 
-**Tiers 1 and 2 are done** (`e36d211` coverage, `5156358` refactor). Nine hand-written copies of
+**Tiers 1 and 2 are done** (`0fd15d4d` coverage, `3848dac9` refactor). Nine hand-written copies of
 "construct a schema sub-builder, build, drain its post-declaration queue" became two shared spellings
 — `schema.Delegate` (caller's declaration context) and `schema.DelegateAs` (a resolved one, with
 `InferNames`). `buildFromFieldStruct` and `buildFromFieldInterface` disappeared entirely: both were a
@@ -738,7 +886,7 @@ Safe to unify, unwitnessable here. That half waits on `StubStdlib` with Q37.
 
 ---
 
-#### Update 2026-08-02 — tier 3 DONE (`80b0fc5`, `1ec0f94`). ✅ Q39 CLOSED
+#### Update 2026-08-02 — tier 3 DONE (`7ff038a5`, `361e2f29`). ✅ Q39 CLOSED
 
 **The block was wrong, and the way it was wrong is the lesson.** Tier 3 was parked on `StubStdlib`
 because the subsets looked invisible under a full graph — true for `time.Time` and
@@ -804,9 +952,9 @@ work is a witness, not a fix. [Q38](#q38)'s third half (a graph omitting `io`) s
 3 is the one that changes the trajectory; 1 and 2 are catch-up. They compose: the conformance suite
 would tell the audit where to look.
 
-### Q40 — ✅ FIXED (`b85126c`) — the allOf member path honoured no classifier, so `swagger:type` there yielded an empty member
+### Q40 — ✅ FIXED (`2c350a56`) — the allOf member path honoured no classifier, so `swagger:type` there yielded an empty member
 
-**Status:** FIXED 2026-08-03 (`b85126c`). Probed 2026-08-02 while measuring Q32's `swagger:type`
+**Status:** FIXED 2026-08-03 (`2c350a56`). Probed 2026-08-02 while measuring Q32's `swagger:type`
 half; deferred from that fix because it is a SHARED gap, not an alias asymmetry — it breaks the named half too, and
 the named half worse.
 
@@ -831,7 +979,7 @@ codescan → allOf[ {} , {properties:{note}} ]
 
 An **empty allOf member** — schema-valid but meaningless, and it silently widens the type.
 
-**Updated 2026-08-02 after `7b04f1e`:** the alias half is now CORRECT (`allOf[{string} + …]`), because
+**Updated 2026-08-02 after `5ad1df18`:** the alias half is now CORRECT (`allOf[{string} + …]`), because
 `buildAllOf`'s alias arm routes through `buildAlias`, which gained the classifier. So this is now
 purely a NAMED-side defect, and the named/alias pair is asymmetric in the unusual direction — the
 alias is right and the named declaration is wrong.
@@ -846,7 +994,7 @@ each consult a different subset of the classifiers; see [Q39](#q39).
 
 ---
 
-#### Update 2026-08-02 — the allOf position joined the conformance matrix (`396a3b4`)
+#### Update 2026-08-02 — the allOf position joined the conformance matrix (`728b8f67`)
 
 It is **three classifiers missing, not one.** `TestBuilderConformance` now compares an allOf member
 alongside the model field / body parameter / response body, and pinned three cells against the one on
@@ -862,7 +1010,7 @@ The third is the worst of them: the composed schema asserts the value **is** an 
 the Go type is a list of them. The arm's `classifierAliasTargetStrfmt` predates the element-driven
 rule ([Q34](#q34)) and writes the format on the whole member.
 
-#### Resolution 2026-08-03 (`b85126c`)
+#### Resolution 2026-08-03 (`2c350a56`)
 
 One root cause for all three: `classifierAliasTargetStrfmt` is **shape-blind**, writing
 `Typed("string", format)` whatever the underlying is. The shape-AWARE classifiers already existed,
@@ -911,7 +1059,7 @@ type's), and never the FIELD's. The plain-embed arm honours neither. Whichever w
 this entry are decided, the field-comment case needs a pinned answer too — honour it, or diagnose
 it — because today it is accepted, validated and discarded.
 
-### Q41 — ✅ FIXED (`fa7b405`) — `in:` beside a classifier annotation warned about itself
+### Q41 — ✅ FIXED (`9de2313f`) — `in:` beside a classifier annotation warned about itself
 
 **Status:** FIXED on `fix/strfmt-dispatch-symmetry`, awaiting review. Found 2026-08-02 while probing
 `swagger:type file`; Fred: *"that is a bug"*.
@@ -947,7 +1095,7 @@ needed a subject that lands exactly on a keyword. Its previous subject was the s
 before the value rather than at the value itself (`" pipe"` instead of `"pipe"`). A small
 position off-by-one on VALUE diagnostics — keyword positions are exact. Not investigated.
 
-### Q42 — ✅ FIXED (`87b02b8`, `8f644b1`) — a `swagger:response` on a named non-struct type emitted no schema
+### Q42 — ✅ FIXED (`1a353da6`, `7b3f3c14`) — a `swagger:response` on a named non-struct type emitted no schema
 
 **Status:** probed 2026-08-02 while removing the sibling short-circuits under [Q39](#q39) tier 3.
 
@@ -993,9 +1141,9 @@ with the same type reached as a model field, and asserts the response types neve
 | `type Emails []string` + `swagger:strfmt email` | no schema | `array<string/email>` ✅ |
 | `type Code string` + `swagger:strfmt isbn` | no schema | `string/isbn` ✅ |
 | `type Count int64` (control) | `integer/int64` | unchanged ✅ |
-| `type Stamp time.Time` | no schema | `$ref` → `string/date-time` ✅ (`8f644b1`) |
+| `type Stamp time.Time` | no schema | `$ref` → `string/date-time` ✅ (`7b3f3c14`) |
 
-**The `Stamp` cell was a second, distinct defect, fixed in `8f644b1`.** `type Stamp time.Time` is not
+**The `Stamp` cell was a second, distinct defect, fixed in `7b3f3c14`.** `type Stamp time.Time` is not
 `time.Time`: the recognizer keys on identity and correctly declines. The model side resolves it
 anyway because `buildFromDecl` builds from the declaration's WRITTEN right-hand side (`Spec.Type` =
 `time.Time`, a named type), where the recognizer fires one level in. `responses.buildNamedType` used
@@ -1010,7 +1158,7 @@ sub-builder would publish the response type as a definition. That distinction is
 The witness's pinned list is now empty: a response body and a model field are both full-schema
 positions, so every difference found between them has been a defect.
 
-### Q43 — ✅ FIXED (`9d3729b`, `52db3a5`) — a single-character tag or operationId silently voided the whole `swagger:route`
+### Q43 — ✅ FIXED (`6ce3bd4c`, `e6660371`) — a single-character tag or operationId silently voided the whole `swagger:route`
 
 **Status:** FIXED 2026-08-02 · found while probing for [Q39](#q39) (a throwaway fixture used `e` as
 its tag and lost both its routes).
@@ -1038,12 +1186,12 @@ one character is a perfectly ordinary tag name.
 
 **Both halves fixed.**
 
-`9d3729b` — `+` → `*` in both patterns; the leading `\p{L}` already carries the "starts with a
+`6ce3bd4c` — `+` → `*` in both patterns; the leading `\p{L}` already carries the "starts with a
 letter" rule. Witnessed by `fixtures/enhancements/route-name-shapes` (five accepted shapes: short
 tag, short id, both, short id with no tags, short tag beside a long one) plus parser-level cases for
 `swagger:operation`, which shares the patterns.
 
-`52db3a5` — the silence, which was the half that mattered. A failed path annotation now raises
+`e6660371` — the silence, which was the half that mattered. A failed path annotation now raises
 `scan.unparsed-path-annotation` with its position and text. Note the ordering property: **the
 diagnostic alone would have made Q43 loud** — reverting the regex fix while keeping it turns the
 five short-name routes into five warnings instead of five silent disappearances. That is the
@@ -1095,7 +1243,7 @@ matters again (it names an ordinary property), unlike the promoted-marshaller ca
 
 Same arm as [Q33](#q33) and reachable by the same fixtures, so they are worth doing in one pass even
 though only Q33 needs a decision first. Related: the composition arm's version of this gap was
-[Q40](#q40), fixed in `b85126c`.
+[Q40](#q40), fixed in `2c350a56`.
 
 ---
 
@@ -1133,6 +1281,98 @@ where the classifier is in fact honoured. So an author naming an embed was told 
 been dropped while it was being applied. The warning now sits on the two arms that really discard it
 (the allOf member and the promoting plain embed). Witnessed by `EffectiveOnNamedEmbed` in the
 annotation-noise fixture.
+
+---
+
+### Q46 — ✅ FIXED (`6d5a9448`) — a description-only `$ref`'d field dropped its description silently
+
+**Status:** FIXED 2026-08-05 on `fix/coverage-quirks`. Surfaced by the coverage sweep (`b06eae8e`),
+which reached the `$ref`-sibling collector for the first time.
+
+A field whose Go type is a model becomes a `$ref`, and draft-4 gives a `$ref` no siblings. When the
+field's ONLY decoration is prose, the legacy default emits a bare `{$ref}` and the description is
+gone:
+
+```go
+// DescOnly is a $ref'd field carrying only a description.
+DescOnly Ref `json:"descOnly"`
+
+codescan → {"descOnly": {"$ref": "#/definitions/Ref"}}      // description gone, no x-go-name
+```
+
+Add ANY other decoration (`readOnly: true`) and it survives on the compound. The drop itself is
+**deliberate and documented** — `README.md#ref-override`, `DescWithRef` (deprecated, default false)
+governs exactly this case, and the defaults reproduce the legacy behaviour byte-for-byte. It is not
+a bug and was not changed.
+
+**What was wrong was the silence.** The same README states the principle for `SkipAllOfCompounding`:
+each drop raises one `CodeDroppedRefSibling` "so the loss is never silent". The description-only
+default lost the same class of content and said nothing, and nothing pointed at `EmitRefSiblings`,
+which keeps it.
+
+#### Resolution (`6d5a9448`)
+
+`CodeDroppedRefSibling` as a **Hint** (not a Warning — nothing is wrong, the default simply cannot
+carry prose beside a `$ref`), naming the field and the option. The code's doc now describes both of
+its causes, told apart by severity. **Zero golden drift across the corpus** — only the diagnostic
+stream grew, which was the whole claim. Volume measured before settling on Hint: 0 on the petstore,
+7 of 31 diagnostics on the classification corpus.
+
+**Provenance note, recorded because the first report was wrong:** this was originally written up as
+"a bare `x-foo:` line silently drops the whole doc comment". It does not. A bare `x-` line is not
+the extension grammar (`Extensions:` + `---` is) — it is **prose**, and on a plain field it lands in
+the description exactly as prose should. On a `$ref`'d field that prose was simply the only content,
+which is this quirk. There is no extension-specific defect.
+
+---
+
+### Q47 — ✅ FIXED (`80eeed0d`) — `walkPathItemProse` guarded against an operation that cannot be nil
+
+**Status:** FIXED 2026-08-05. Dead code, found by the same coverage sweep — the branch never
+executed because it cannot.
+
+`walkPathItemProse` looped `for _, op := range operationsByMethod(pi)` and skipped `op == nil`. But
+`operationsByMethod` already filters: it walks the seven method slots and `continue`s on a nil one
+before yielding. The guard was unreachable. Removed, with a comment saying why none is needed.
+
+---
+
+### Q48 — 🟦 DOCUMENTED (`80eeed0d`) — `walkSchemaProse` carries arms a Swagger 2.0 document cannot reach
+
+**Status:** documented, deliberately kept. Not a defect.
+
+`walkSchemaProse` recurses through `AnyOf`, `OneOf` and the tuple form of `Items` (`Items.Schemas`).
+None can fire while the emitter targets Swagger 2.0, which has no such constructs — so they read as
+untested paths in any coverage report and always will.
+
+They stay: the walk has to remain total over `spec.Schema`, and they become live the day the emitter
+targets OAS 3.x. A comment on the function now says so, so the next coverage reader does not chase
+them.
+
+### Q49 — ✅ FIXED (`8625ca15`, PR #119) — a `swagger:meta` outside the package doc read a different comment
+
+**Status:** FIXED and merged 2026-08-17. Registered here after the fact — the fix landed alongside the
+TUI escape-sequence work, and this register would otherwise never have heard about it.
+
+Detection read every comment group in a file, so a `swagger:meta` was found wherever it sat. The block
+was then taken from the file's **package doc** regardless of where it had been found, so what you got
+depended only on whether the file happened to have one:
+
+| file shape | before |
+|---|---|
+| has a package doc, `swagger:meta` elsewhere | an **unrelated sentence** was parsed as the meta block — an ordinary line about the package could set the spec's title and version, while the authored block was dropped |
+| no package doc at all | nothing to parse; the nil comment group reached the origin recorder for the info node — **a nil dereference that aborted the whole scan** |
+
+The group carrying the annotation is now the meta block, which is what `detectNodes` already implied and
+what the classifier's own documentation already claimed. The documented placement — a block *in* the
+package doc comment, which is what every fixture uses — is unaffected: there, the group carrying the
+annotation is the package doc.
+
+**Two things worth keeping from how this was found.** The crash arm was reachable **only for a caller
+asking for provenance**, which is why `genspec-tui` hit it and the library never did — a reminder that
+`OnProvenance` is a second execution path through the scanner, not a passive observer. And every fixture
+used the documented placement, so the whole corpus agreed with a broken implementation: a golden suite
+proves what the fixtures cover, and here they all covered the one case that worked.
 
 ## 2. Open — documented sharp edges (no fix planned, authors need to know)
 
@@ -1175,8 +1415,8 @@ open in an archived file but is **fixed**:
 
 | record | archived claim | verified reality |
 |---|---|---|
-| D1, D2, D5 | "Not attempted" | RESOLVED, PR #32 (`c896cc7`, `e2ec828`) — per `archive/observed-quirks.md`'s own closing tally |
-| D6 | "Not attempted" | REFRAMED, PR #32 (`c9eabd9`) |
+| D1, D2, D5 | "Not attempted" | RESOLVED, PR #32 (`40978ced`, `a758dca8`) — per `archive/observed-quirks.md`'s own closing tally |
+| D6 | "Not attempted" | REFRAMED, PR #32 (`5fab72f6`) |
 | D4 | "Not attempted" | CLOSED-NO-ACTION 2026-06-10 |
 | D3 / `schema/README.md#quirks-open` 🟡 "named-strfmt + `swagger:model`" | open, "reverted, deferred" | **fixed** — golden `enhancements_named_struct_tags-ref.json` shows `PhoneNumber` = `{type: string, format: phone}` and `Contact.phone` = `$ref`. Superseded by F-series **F1** (`8e20d2f`) |
 | `schema/README.md#quirks-open` 🟡 "cross-package name collisions silently overwrite" | open, "needs three pieces" | **fixed** by name-identity — goldens show `AWidget`/`BWidget`, `XItem`/`YItem` deconfliction |

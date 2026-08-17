@@ -51,37 +51,38 @@ Single list, shipped first (achievements in sight), then open. Each: status ·
 title → file · stream · origin · issues. Markers: **low** = deferred low priority ·
 **TODO** = approach undecided · **verify** = mostly a check of allegedly-fixed work.
 
-- ✅ [Prune unused models under `-m`](features/prune-unused-models.md) · Stream 9 · (iii) · go-swagger#2639 · v0.35
-- ✅ [Definition-name auto-disambiguation](features/name-identity-disambiguation.md) · Stream 9 · (iii) · go-swagger#1734 · v0.35
-- ✅ [Explicit additionalProperties control](features/additionalproperties-control.md) · Stream 9 · (iii) · go-swagger#2539/#3005 · v0.35
-- ✅ [Map additionalProperties for non-string keys](features/map-additionalproperties-keys.md) · Stream 9 · (iii) · go-swagger#2251 · v0.35
-- ✅ [Scanner robustness / fail-loud](features/fail-loud-diagnostics.md) · Stream 9 · (iii) · go-swagger#2886/#2874 · v0.35
-- ✅ [ExternalDocs on non-meta objects](features/externaldocs-non-meta.md) · Stream 9 · (iii) · go-swagger#2872/#2655 · v0.35
-- ✅ [Single-line comment as description](features/single-line-description.md) · Stream 9 · (iii) · go-swagger#2626 · v0.35
-- ✅ [Emit `x-go-type` vendor extension](features/emit-x-go-type.md) · Stream 9 · (iii) · go-swagger#2924 · v0.35
-- ✅ [Naming from struct tags (`form:`, `schema:`)](features/naming-tags.md) · Stream 9 · (iii) · go-swagger#2912/#1391 · v0.36
-- ✅ [Response-level examples by mime](features/response-examples-by-mime.md) · Stream 9 · (iii) · go-swagger#2871 · v0.36
-- ✅ [After-declaration annotation comments](features/comment-source-filtering.md) · Stream 8 · (i) · 🔷 v0.36
-- ✅ [Godoc-syntax filtering & idiom recomposition](features/godoc-filter.md) · Stream 8 · (i) · 🔷 v0.36
-- ✅ [Inner markdown — `swagger:description \|` block scalar](features/inner-markdown.md) · Stream 8 · (iii) · 🔷 v0.36 · go-swagger#3211
-- ✅ [Shared `swagger:parameters` / `swagger:response`](features/shared-parameters.md) · Stream 9 · (iii) · 🔷 v0.36 · go-swagger#2632
-- ✅ [Discriminator subtype discovery](features/discriminator-subtype-discovery.md) · Stream 9 · (iii) · go-swagger#1913
-- ⬜ [Infer `required` from field shape](features/infer-required-from-shape.md) · Stream 9 · (iii) · go-swagger#3275 · **TODO**
-- ⬜ [Per-operation field views (projections)](features/per-operation-projections.md) · Stream 9 · (iii) · go-swagger#1992 · **low**
-- ⬜ [Name-identity advanced](features/name-identity-advanced.md) · Stream 9 · (iv) · **low**
-- ⬜ [`withPatternProperties` auto-inference](features/pattern-properties-inference.md) · Stream 9 · (iv) · **low**
+- ✅ [Prune unused models under `-m`](features/archive/prune-unused-models.md) · Stream 9 · (iii) · go-swagger#2639 · v0.35
+- ✅ [Definition-name auto-disambiguation](features/archive/name-identity-disambiguation.md) · Stream 9 · (iii) · go-swagger#1734 · v0.35
+- ✅ [Explicit additionalProperties control](features/archive/additionalproperties-control.md) · Stream 9 · (iii) · go-swagger#2539/#3005 · v0.35
+- ✅ [Map additionalProperties for non-string keys](features/archive/map-additionalproperties-keys.md) · Stream 9 · (iii) · go-swagger#2251 · v0.35
+- ✅ [Scanner robustness / fail-loud](features/archive/fail-loud-diagnostics.md) · Stream 9 · (iii) · go-swagger#2886/#2874 · v0.35
+- ✅ [ExternalDocs on non-meta objects](features/archive/externaldocs-non-meta.md) · Stream 9 · (iii) · go-swagger#2872/#2655 · v0.35
+- ✅ [Single-line comment as description](features/archive/single-line-description.md) · Stream 9 · (iii) · go-swagger#2626 · v0.35
+- ✅ [Emit `x-go-type` vendor extension](features/archive/emit-x-go-type.md) · Stream 9 · (iii) · go-swagger#2924 · v0.35
+- ✅ [Naming from struct tags (`form:`, `schema:`)](features/archive/naming-tags.md) · Stream 9 · (iii) · go-swagger#2912/#1391 · v0.36
+- ✅ [Response-level examples by mime](features/archive/response-examples-by-mime.md) · Stream 9 · (iii) · go-swagger#2871 · v0.36
+- ✅ [After-declaration annotation comments](features/archive/comment-source-filtering.md) · Stream 8 · (i) · 🔷 v0.36
+- ✅ [Godoc-syntax filtering & idiom recomposition](features/archive/godoc-filter.md) · Stream 8 · (i) · 🔷 v0.36
+- ✅ [Inner markdown — `swagger:description \|` block scalar](features/archive/inner-markdown.md) · Stream 8 · (iii) · 🔷 v0.36 · go-swagger#3211
+- ✅ [Shared `swagger:parameters` / `swagger:response`](features/archive/shared-parameters.md) · Stream 9 · (iii) · 🔷 v0.36 · go-swagger#2632
+- ✅ [Discriminator subtype discovery](features/archive/discriminator-subtype-discovery.md) · Stream 9 · (iii) · go-swagger#1913
+- ✅ [Skip-jsonify-interfaces opt-out](features/archive/skip-jsonify-interfaces.md) · Stream — · (ii) · 🔷 v0.36
+- ✅ [`swagger:description` / `swagger:title` overrides](features/archive/swagger-description-override.md) · Stream — · (ii) · 🔷 v0.36
+- ✅ [`DefaultAllOfForEmbeds`](features/archive/default-allof-for-embeds.md) · Stream — · (ii) · 🔷 v0.36
 - ⬜ [Token-level YAML positions](features/yaml-token-positions.md) · Stream 11 · (i) · 🔷 v0.38
 - ⬜ [Column precision beyond ASCII](features/column-precision-unicode.md) · Stream 11 · (i) · 🔷 v0.38
 - ⬜ [Godoc-identifier prefix on `swagger:operation`](features/godoc-identifier-prefix.md) · Stream 10 · (i) · 🔷 v0.39
-- ⬜ [Enum richer values](features/enum-richer-values.md) · Stream — · (i) · **TODO**
-- ⬜ [Standard formats only (no extended widths)](features/standard-formats-only.md) · Stream — · (ii) · **low**
-- ⬜ [Example value coercion (verification)](features/example-values.md) · Stream — · (i) · go-swagger#1268/#2246 · **verify**
+- ⬜ [Example value coercion (verification)](features/archive/example-values.md) · Stream — · (i) · go-swagger#1268/#2246 · **verify**
 - ⬜ [Property-based Block generator](features/property-based-block-generator.md) · Stream 2 · (i)
-- ✅ [Skip-jsonify-interfaces opt-out](features/skip-jsonify-interfaces.md) · Stream — · (ii) · 🔷 v0.36
-- ✅ [`swagger:description` / `swagger:title` overrides](features/swagger-description-override.md) · Stream — · (ii) · 🔷 v0.36
-- ✅ [`DefaultAllOfForEmbeds`](features/default-allof-for-embeds.md) · Stream — · (ii) · 🔷 v0.36
 - ⬜ [`DiscoverAliasesAsTypes`](features/discover-aliases-as-types.md) · Stream — · (ii)
 - ⬜ [Bullet-list dash preservation](features/bullet-dash-preservation.md) · Stream — · (iv)
+- ⬜ [Reclaim the GC share of a scan (`genspec`)](features/gc-tuning-scan.md) · Stream — · (ii) · ⚡ **experiment**
+- ⬜ [Per-operation field views (projections)](features/per-operation-projections.md) · Stream 9 · (iii) · go-swagger#1992 · **low**
+- ⬜ [Standard formats only (no extended widths)](features/standard-formats-only.md) · Stream — · (ii) · **low**
+- ⬜ [Name-identity advanced](features/name-identity-advanced.md) · Stream 9 · (iv) · **low**
+- ⬜ [`withPatternProperties` auto-inference](features/pattern-properties-inference.md) · Stream 9 · (iv) · **low**
+- ⬜ [Infer `required` from field shape](features/infer-required-from-shape.md) · Stream 9 · (iii) · go-swagger#3275 · **TODO**
+- ⬜ [Enum richer values](features/enum-richer-values.md) · Stream — · (i) · **TODO**
 
 _Stream `—` = cross-cutting core enhancement (no dedicated stream; rides
 whichever stream touches its seam)._

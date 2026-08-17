@@ -1,7 +1,7 @@
 # go-swagger backlog — FORTHCOMING-FEATURE-tied
 
 _Triaged **wont-fix-as-framed** issues that each map to a **recorded forthcoming
-feature** in [`forthcoming-features.md`](forthcoming-features.md). Split out of
+feature** in [`forthcoming-features.md`](../forthcoming-features.md). Split out of
 `backlog-triaged-wontfix.md` (2026-06-17) so the pure wont-fix set stays clean.
 Each verdict cites its §; example snippets stripped. These convert to ✅ as their
 feature lands._
@@ -78,7 +78,7 @@ response/example handling forward. No fixture. 📖 Doc-site: note that complex
 emitted name is derived from (default `["json"]`; e.g. `["form","json"]` for
 gin). Applies to schema properties, parameters and response headers; only the
 name is sourced this way (encoding/json directives stay json-sourced). See
-`features/naming-tags.md`. Also contributes #2912. **Doc-site action (still
+`features/archive/naming-tags.md`. Also contributes #2912. **Doc-site action (still
 open):** document json-tag naming + the new `NameFromTags` option.
 
 
@@ -180,4 +180,4 @@ EOF. Shipped on `feat/feature-v0.36` (inner-markdown feature; lexer P1 `cf6d918`
 end-to-end P3 `7765d44`, docs P4 `c199fb3`). The old preamble-path pipe-strip is
 unchanged by design — markdown belongs in the explicit override, not ambient
 godoc. **Doc-site action:** how-to for the `swagger:description |` markdown body
-(rides the doc-site cadence). See `features/inner-markdown.md`.
+(rides the doc-site cadence). See `features/archive/inner-markdown.md`.

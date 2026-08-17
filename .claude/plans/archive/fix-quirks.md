@@ -81,7 +81,7 @@ this fix. Implementation:
 
 Diagnostic-emit-on-duplicate-key is **deferred** to the yaml-library
 swap tracked in
-[`forthcoming-features.md`](forthcoming-features.md) §3.1
+[`forthcoming-features.md`](../forthcoming-features.md) §3.1
 (`goccy/go-yaml` POC). When that library lands — driven by LSP's need
 for per-token positions — duplicate-key warnings come along naturally
 because we'll already be walking tokens with position metadata. No

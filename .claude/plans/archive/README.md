@@ -42,6 +42,76 @@ from code comments, so the files keep their names.
 | `backlog-triaged-poison.md` | Stream 9 | 🐞 poison queue — empty |
 | `prune-unused-models.md` | Stream 9 §12 | `PruneUnusedModels`, merged PR #50 |
 
-Live reference docs deliberately kept one level up: `grammar-parser-architecture.md`,
-`../grammar/` (language spec), `observed-quirks.md` (quirks catalog),
-`deferred-quirks.md` / `quirks-F-series-fix.md` (open tails), `ramblings/`, `workshops/`.
+## Sweep of 2026-08-17 (pre-v0.36.4 review)
+
+Twenty-one more plans came down in one pass, taking the live set from 38 to 17. Every one of these is
+merged or superseded; none had an open action left. Grouped by why.
+
+| File | Stream / origin | Why archived |
+|------|-----------------|--------------|
+| `on-demand-scanner.md` | Stream 8 `V-scanner` | merged PR #90; worklist closed, named deliverable retired by its own measurement. **Still cited** — `../pull-based-builder.md` points here for the measurements |
+| `wasi-build.md` | Stream 6 round 1 | merged PR #79 — the artifact + `internal/packages` |
+| `playground-ux.md` | Stream 6 round 1 | merged PR #79 — the front end |
+| `wasm-playground.md` | Stream 6 origin | superseded 2026-08-02; several of its guesses did not survive contact, which is why it is worth keeping |
+| `genspec-tui-linkage.md` | Stream 5 | design settled, linkage chain complete 2026-07-30 |
+| `genspec-tui-linkage-build.md` | Stream 5 | the build tracker for the above |
+| `tui-ux-enhancements.md` | Stream 5 | merged PR #92; only the deferred light/dark theme outlived it (tracked on the roadmap row, not here) |
+| `tui-ux-round2.md` | Stream 5 | merged PR #100; drove three fixes into `go-openapi/validate` |
+| `doc-site-cli.md` | Stream 7 | merged PR #115 — the CLI pages and the rebuilt `usage/` section |
+| `doc-site-reference.md` | Stream 7 | the reference migration it planned is done; `usage/reference/` was deliberately deleted |
+| `benchmarks-cleanup.md` | Stream 8 | merged PR #118 — corpus in-repo, one document, the loader and history stories |
+| `grammar-parser-architecture.md` | Stream 3 | historical since Stream M; the live spec is `../grammar/` |
+| `name-identity-cyclic-ref.md` | Stream 9 | shipped v0.35 through Stage 3 — `EmitHierarchicalNames` exists |
+| `golden-unit-to-integration.md` | Stream 2 | done: **zero `CompareOrDumpJSON` callers remain under `internal/builders/`**, and the curated builder tests carry property assertions as decided |
+| `additional-properties.md` | Stream 9 | phases 1–2c landed 2026-06-17 |
+| `fail-loud-diagnostics.md` | Stream 9 | landed; `scan.degraded-load` is what emptied the backlog's poison queue |
+| `swagger-omit.md` | Stream 9 | merged PR #67 |
+| `typed-extensions.md` | Stream 4 | both rounds landed |
+| `tabbed-examples.md` | Stream 7 | feature complete |
+| `textmarshaler-toolchain-independence.md` | cross-cutting | merged; `.github/workflows/toolchain-independence.yml` is in master, which is the proof |
+| `alias-override-symmetry.md` | Stream 4 / Q32 | the fixes are in master (`1b0e7b2f`, `ed9897cb`, `5ad1df18`) and Q32 is closed in the live register |
+
+**Note on hashes.** Plans archived here cite commits by their **pre-rebase** hashes, which resolve to
+nothing — the branches were rebased on merge. `../quirks-open.md` had 28 such citations rewritten to
+their master equivalents on 2026-08-17; nobody has done the same for these files, and nobody should
+bother. Match by commit subject if you need the real one.
+
+## Sweep of 2026-08-17, part 2 — the "almost complete" six
+
+Six more came down the same day, under a rule that did not exist before it: **a plan that is done except
+for a few deferred or parked items is archived stamped *almost complete*, with its tail recapped in
+`../backlog.md`.** Each of these opens with a `> [!NOTE]` block saying which it is and where its tail
+went; the original document follows unchanged beneath.
+
+| File | State | Tail |
+|------|-------|------|
+| `genspec-cli.md` | almost complete — merged PR #111 + #114 | `../backlog.md` §1 (5 items; the release `require` bump closed 2026-08-17) |
+| `tui-round3.md` | almost complete — merged PR #108 + #110 | `../backlog.md` §2 |
+| `pull-based-builder.md` | parked — nothing built, prerequisite met | `../backlog.md` §4; `SchemaCache` went to `../internal-document-model.md` |
+| `go127-uuid.md` | almost complete — merged PR #77 | `../backlog.md` §4.2 (a go1.28 GA calendar trigger) |
+| `loader-vs-gopackages.md` | almost complete — D1–D9 all resolved | `../backlog.md` §4.1 (the differential harness) |
+| `doc-site-backlog-alignment.md` | **complete** — every row ✅, no tail | — |
+
+`doc-site-cli.md` (archived earlier the same day) also contributed a tail — `../backlog.md` §5 and §6 —
+including the one item worth knowing about: **the doc lane's changed-paths filter does not watch
+`cmd/internal/` or `cmd/genspec-wasi`, so the published playground can silently lag its sources.**
+
+## Still live, one level up
+
+**Ten documents, down from 38 at the start of the day** (the two `validate-*-report.md` moved into
+`../validate-fixtures/`, beside the harness they guide — valuable material for testing spec-validation
+output from `genspec`/`genspec-tui`, but not active work):
+
+`../roadmap.md` (the index) · `../backlog.md` (tails of finished plans) · `../forthcoming-features.md`
+(feature catalog) · `../quirks-open.md` (the single quirk register) · `../doc-site-wishlist.md` (the
+W-series) — five registers, each with one job.
+
+Then five active plans: `../release-v0.36.4.md` · `../security.md` · `../internal-document-model.md`
+(the v0.37.x pillar) · `../wasi-round2.md` (round-2 receptacle, gate cleared) ·
+`../anonymizer-repro-tool.md` (scrambler — L0 built and unmerged, L2 and eight open questions ahead).
+
+Directories: `../grammar/` (the language spec), `../features/` (13 **open** features; the 25 shipped ones
+are in `../features/archive/` with their own README), `../ramblings/`, `../validate-fixtures/` (the
+validate harness, now also holding the two `validate-*-report.md` written for `go-openapi/validate`).
+
+Archived directories here: `workshops/` — all five workshops (alias handling ×4, enum) are complete.

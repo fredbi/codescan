@@ -1,0 +1,9 @@
+ContinueOnErrors=false, 50 runs:
+    5 runs  [ERR /definitions/Pet/required/0 WARN /definitions/Tag/required/0]
+   45 runs  [ERR /definitions/Pet/required/0]
+  => 2 distinct outcomes
+
+ContinueOnErrors=false, 50 runs:
+   42 runs  [ERR /definitions/A]
+    8 runs  [ERR /definitions/B]
+  => 2 distinct outcomes

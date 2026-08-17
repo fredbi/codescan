@@ -55,7 +55,7 @@ Interactions:
 - The Q-D embed contract is independent: `swagger:allOf` still governs
   composition shape at embed sites, regardless of whether the embedded alias is
   annotated or auto-discovered under this option (see
-  [default-allof-for-embeds](default-allof-for-embeds.md)).
+  [default-allof-for-embeds](archive/default-allof-for-embeds.md)).
 - The `swagger:model` decl-side semantics are unaffected — an annotated alias
   decl carries its own `definitions` entry unconditionally (R2 in the workshop
   ledger), and this option does not alter that.

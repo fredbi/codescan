@@ -1,0 +1,12 @@
+{
+  "swagger": "2.0",
+  "info": {"title": "t", "version": "1"},
+  "paths": {
+    "/a": {"get": {"operationId": "getA", "responses": {"200": {"description": "ok", "schema": {"$ref": "#/definitions/A"}}}}},
+    "/b": {"get": {"operationId": "getB", "responses": {"200": {"description": "ok", "schema": {"$ref": "#/definitions/B"}}}}}
+  },
+  "definitions": {
+    "A": {"type": "object", "allOf": [{"$ref": "#/definitions/A"}]},
+    "B": {"type": "object", "allOf": [{"$ref": "#/definitions/B"}]}
+  }
+}

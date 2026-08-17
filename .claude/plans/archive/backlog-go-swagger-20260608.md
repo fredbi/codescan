@@ -4,7 +4,7 @@ _Source: `issues-spec-20260608.json` (236 open issues, label-filtered to spec ge
 
 The **Example?** column marks issues whose body embeds an example spec or code snippet. When marked **[▶](#a-NUM)**, the extracted snippet(s) are reproduced in the [Appendix](#appendix--embedded-examples) at the end of this document.
 
-The **Status** column tracks per-issue triage state during the backlog pass (Stream 9 in [roadmap.md](roadmap.md)). Legend:
+The **Status** column tracks per-issue triage state during the backlog pass (Stream 9 in [roadmap.md](../roadmap.md)). Legend:
 
 - ⬜ open / untriaged — default starting state.
 - 👀 **verify-only** — likely already fixed by current code; needs TUI verification + screenshot, then close.

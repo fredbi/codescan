@@ -36,7 +36,7 @@ steer authors toward the common form:
 ```
 
 **Interactions.** Relates to the godoc-subset entry point of
-[comment-source-filtering](comment-source-filtering.md) and the C9
+[comment-source-filtering](archive/comment-source-filtering.md) and the C9
 pluggable-styles / `openapi:` prefix work.
 
 **When to revisit.** The leading-identifier step can land anytime; the broader

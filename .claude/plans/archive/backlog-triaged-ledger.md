@@ -2938,7 +2938,7 @@ The **struct-based `swagger:response` path** now also supports response-level
 `examples:` (a mime-keyed YAML map → `Response.examples`), landed v0.36 on
 `feat/feature-v0.36` — new `examples` grammar keyword (CtxResponse) parsed in
 `responses/walker.go`; locked by `fixtures/enhancements/response-examples-by-mime`
-+ `TestCoverage_ResponseExamplesByMime` + golden. See `features/response-examples-by-mime.md`.
++ `TestCoverage_ResponseExamplesByMime` + golden. See `features/archive/response-examples-by-mime.md`.
 **Doc-site action:** per-response `examples:` (by mime) on BOTH the
 swagger:operation YAML body and the struct `swagger:response`.
 

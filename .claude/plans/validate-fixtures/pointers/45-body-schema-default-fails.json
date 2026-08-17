@@ -1,0 +1,2 @@
+{"swagger":"2.0","info":{"title":"t","version":"1"},
+ "paths":{"/a":{"post":{"operationId":"a","parameters":[{"name":"payload","in":"body","schema":{"type":"object","properties":{"n":{"type":"integer","default":"nope"}}}}],"responses":{"200":{"description":"ok"}}}}}}

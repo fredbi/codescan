@@ -15,8 +15,8 @@ prev: "§18.1"
 the `TextMarshaler` carve-out remain open.
 
 **Origin.** (iv) deferred refinement on the landed additionalProperties work —
-see [map-additionalproperties-keys](map-additionalproperties-keys.md) and
-[additionalproperties-control](additionalproperties-control.md) as the shipped
+see [map-additionalproperties-keys](archive/map-additionalproperties-keys.md) and
+[additionalproperties-control](archive/additionalproperties-control.md) as the shipped
 parents. The unsolved tail recorded in `.claude/plans/additional-properties.md`
 §7.
 

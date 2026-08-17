@@ -1,248 +1,139 @@
-# Doc-site feature wishlist
+> [!NOTE]
+> Last revision: 2026-08-17 — rewritten. Open work only; the shipped record moved to
+> [`archive/doc-site-wishlist-done.md`](archive/doc-site-wishlist-done.md).
 
-Forthcoming improvements for the **codescan doc-site** (the Hugo site under
-`docs/doc-site/` + `hack/doc-site/hugo/`, with test-covered examples in
-`docs/examples/`). Companions: `archive/doc-site-quirks.md` (scanner bugs the docs
-revealed), and the build plan in the doc-site worktree's
-`doc-site-reference.md`. Cross-refs to product directions:
-`project_wasm_playground`, `project_genspec_tui`, `project_v2_vision`.
+# Doc-site wishlist
 
-Status as of 2026-06-13: reference + tutorials + shaping-the-output complete and
-merging. This doc is the **next-wave backlog**, not committed work. Refined with
-Fred's review (2026-06-13).
+Open work on the Hugo site (`docs/doc-site/`, theme in `hack/doc-site/hugo/`, test-covered examples in
+`docs/examples/`). Not committed work — a list to pick from.
 
-Priority key: 🟢 quick win · 🟡 medium · 🔴 bigger bet. Effort is rough.
+**Rule adopted this revision: "source ready" is not a status.** Several items carried it while nothing
+existed beyond notes about what might be possible. An item is 📝 *planned* until a page exists on the
+site. Claims below say what was actually checked.
 
----
+| # | Item | State | Size |
+|---|------|-------|------|
+| W20 | Maintainers-oriented reference, consolidating the repo's READMEs (absorbs W4) | 📝 planned | 🔴 large |
+| W17 | Syntax pitfalls page | 📝 planned — pre-writing only | 🟡 |
+| W8c | Getting started — "Usage with `go:generate`" | 📝 planned | 🟢 |
+| W13 | OpenAPI 3.x coverage | ⏸ on hold | 🔴 |
 
-## A. Interactive rendering
-
-### W1 — OpenAPI UI widget (`{{< openapi >}}`) 🟢→🟡 — ✅ DONE (2026-06-26, doc-features `06ce50f`)
-Render the generated spec as live Swagger-UI on full-spec pages — the capstone
-(`putting-it-together`) and a dedicated "see it rendered" showcase. Closes the
-loop: annotated Go → JSON → **the API docs the annotations produce**.
-
-**Landed:** "Rendered" tab on the capstone, feeding the petstore golden
-(`examples/basic/testdata/swagger.json`) to the Relearn `openapi` shortcode via
-an always-visible "Seeing it rendered" section (NOT a tab — Swagger UI can't
-paint inside a `display:none` tab panel). Swagger UI is theme-bundled
-(offline-clean); the widget reads the same UPDATE_GOLDEN golden as the JSON block
-so it can't drift. Note: openapi `src` resolves against the global assets root,
-so it needs the `examples/` prefix (unlike the `code` shortcode). The dedicated
-showcase spec is still open if a second, larger curated spec is wanted later.
-
-**Follow-up:** a forward-looking **tabbed-example** pattern (Source / Spec /
-Rendered / future WASM Playground) is designed in `tabbed-examples.md` — it
-revisits the tab presentation with a re-render shim so the Rendered widget works
-in a tab, and reserves a Playground slot for `W11`.
-
-- Relearn provides the shortcode; we provide the spec as a fetchable asset
-  (mount a full golden into `static/`, or feed the shortcode a path).
-- **Constraint:** only valid for *whole* specs. Our tutorial goldens are
-  fragments (one definition / one path) and won't render standalone → widget
-  on the capstone + one curated showcase spec, NOT on every tutorial.
-- Heavy JS → lazy-load.
-- First step: wire the petstore (`basic/testdata/swagger.json`) onto the
-  capstone behind a "Rendered" tab.
-
-### W11 — WASM live playground 🔴
-A "Try it" editor: type annotated Go in the browser, see the spec live
-(+ the W1 widget). codescan compiled to WASM; the doc-site is the host. This is
-the documented `project_wasm_playground` direction — phased behind the
-genspec-tui work. Biggest adoption lever; largest effort.
-
-### W10 — Annotation → spec cross-highlight 🔴 (unlocked by W11)
-Hover/click a Go line, highlight the spec node it produced (and vice versa).
-**Already a feature of the TUI** (`project_genspec_tui`); the path is: backport
-the TUI cross-ref to the WASM build (W11), then the doc-site surfaces it through
-the playground widget. Not a standalone doc-site effort — it rides on W11.
+⛔ Dropped 2026-08-17: **W19**, **W9**.
+❓ Undisposed, need a call: **W7-residue**, **W3**, **W14**, **W2**, **W18** — last section.
 
 ---
 
-## B. Content expansion
+## W20 — Maintainers-oriented reference 🔴
 
-### W6 — Advanced modeling tutorial 🟡
-Discriminator / polymorphism, nested `allOf`, maps / `additionalProperties`,
-recursive types, embedded interfaces. The current Model definitions page is
-deliberately introductory; this is the deep end. (Fred: discriminator is the
-clear gap to add.)
+The project's real architecture documentation lives in `README.md` files through the source tree and
+none of it is on the site. **16 package READMEs, ~7,000 lines** (surveyed 2026-08-17, excluding `hack/`,
+the vendored theme and `.claude/`):
 
-### W7 — Document & security: prefer overlay 🟡
-Cover the full `swagger:meta` + security surface (`securityDefinitions`,
-security requirements, `externalDocs`, `tos`, `infoExtensions`, top-level
-`extensions`) — but **lead with the recommendation to overlay a hand-authored
-base spec (`InputSpec`) rather than annotate this in Go**. Document/security
-metadata is almost always simpler to maintain as a base document the scan merges
-onto (see Shaping → Overlaying a spec) than imposed on the source. The page
-should make that the default advice and treat the in-code annotations as the
-fallback.
+| lines | file | lines | file |
+|---:|---|---:|---|
+| 2139 | `internal/builders/schema` | 302 | `internal/builders/validations` |
+| 1194 | `internal/parsers/grammar` | 297 | `internal/benchmarks` |
+| 1025 | `internal/scanner` | 247 | `cmd/genspec-wasi` |
+| 618 | `cmd/genspec-tui` | 226 | `internal/builders/routes` |
+| 342 | `internal/builders/responses` | 189 | root `README.md` |
+| 320 | `internal/builders/parameters` | 185 | `internal/parsers/yaml` |
+| 178 | `internal/builders/handlers` | 175 | `internal/parsers/routebody` |
+| 162 | `internal/builders/common` | 157 | `cmd/genspec` |
+| 136 | `internal/builders/godoclink` | 99 | `internal/builders/operations` |
 
-### W8 — CLI / TUI getting-started siblings 🟡 (blocked on tooling)
-Getting started anticipated siblings to "Usage as a library". Add them as the
-tools ship:
-- "Usage from the CLI" — when a codescan CLI lands.
-- "Usage with the TUI" — `genspec-tui` (`project_genspec_tui`, status WIP).
-- "Usage with `go:generate`".
+These are the **normative contracts**, cited by section anchor from `.claude/CLAUDE.md` and from code
+(`internal/scanner/README.md#loader`, `internal/builders/schema/README.md#allof`, `#omit`,
+`#ref-override`, …). A contributor must already know the tree to find any of it.
 
-### W16 — "About / why codescan" explainer 🟢 (source ready)
-The one Diátaxis *explanation*-tier page we lack. Positions codescan and orients
-go-swagger users.
+⚠️ **Decide first: mount, copy, or generate.** Copying is the obvious move and the wrong one — that is
+the drift that made the keyword reference lie once already (the reason W9 existed), here at 7,000 lines
+against documents that change with every builder fix.
 
-**Framing** (anchored on go-swagger's `docs/about.md`, the design-first vs
-code-first primer):
-- Two approaches to API dev: **design-first** (contract-first; go-swagger
-  generates server/client from a spec) and **code-first** (annotate Go, scan to
-  a spec). codescan is the **code-first engine**.
-- Relationship: codescan was extracted from go-swagger; it is the scanner
-  **behind `swagger generate spec ./...`**. go-swagger remains the main CLI
-  consumer. This doc-site documents the *library/scanner*; it sits **upstream of**
-  go-swagger's "generate spec" section (which predates this site and will link
-  down to it).
-- Why scan-from-source: keep the spec in sync with the code, fast code-first
-  iteration, document an already-deployed server. When design-first fits better,
-  point to go-swagger.
-- For go-swagger users: same annotations; you can call the library directly or
-  keep using `swagger generate spec`.
+- **Mount** (as `docs/examples/` already does via `{{< code >}}`) — no drift, but these are written for
+  maintainers reading source: relative links and code-relative anchors break as site pages. The
+  link-rewriting is the real work.
+- **Generate** a Maintainers section at build time — same no-drift property, more machinery, inherits
+  whatever heading structure the READMEs happen to have.
+- **Curate** a smaller site-side synthesis, READMEs stay authoritative — no drift risk (the site never
+  claims completeness), but it is new writing and the two can still disagree.
 
-**Source to adapt:** `/home/fred/src/github.com/go-swagger/go-swagger/docs/about.md`
-(community-toolkit philosophy, the two-approaches section, `swagger generate
-spec` example). Keep it short and link out to go-swagger rather than duplicating
-the toolkit story.
+Convention already settled: `maintainers/commands.md` is the seam for "how the tools are built rather
+than what they do". W20 is the same question at ten times the size — **answer it once, for all of it.**
 
-Bounded and source-ready → good early build.
+### W20a — pipeline diagram (was W4)
 
-### W3 — Known limitations page 🟢 (after quirks triage)
-A public, honest "known limitations" section once `archive/doc-site-quirks.md` F1–F9 are
-triaged/fixed — sets expectations (alias edge cases, OAS2-only surface, etc.).
-Gate on the fix branch so we don't advertise bugs that are about to vanish.
+Folded in 2026-08-17: maintainers-oriented material, so **not** the cheap standalone item it was filed
+as. A mermaid graph exists **as a plan and was never published** — `.claude/plans/type-dependencies.mmd`,
+dated 2026-03-23 and now five months stale, i.e. it predates the package split it describes. Verified:
+the only mermaid on the site is on `performance.md` and `ROADMAP.md`; the Maintainers landing has none.
 
-### W17 — Syntax pitfalls page 🟢 (source ready)
-A focused "gotchas" page on the brittle edges of the annotation syntax — the
-places where a spec silently comes out wrong rather than erroring. These bit us
-repeatedly while building the examples, so the material is real and test-backed.
+## W17 — Syntax pitfalls page 🟡
 
-Cover at least:
-- **Indentation rules in `swagger:operation` YAML bodies.** The body after the
-  `---` is YAML, so indentation is significant — and **`gofmt` re-indents doc
-  comments with tabs**, which the scanner's `yaml.RemoveIndent` then has to
-  expand before stripping (the bug fixed in `project_gofmt_yaml_tab_indent`).
-  Show the safe idiom and what a mangled-nesting failure looks like.
-- **The prose-token footgun.** A comment line that *starts* with a `swagger:<name>`
-  token, or a keyword like `name:` / `example:` / `patternProperties:`, is parsed
-  as that annotation/keyword **even in prose** — it silently truncates the
-  description or misfires the directive. Rule: keep such tokens mid-line or
-  backtick-wrapped. (Bit us in `maps.go` and the `shaping/formats` example.)
-- **List separators & bracket forms.** Comma-separated `enum`, the bracketed
-  `[a,b,c]` enum form (brackets stripped), security AND (several keys in one
-  requirement) vs OR (separate list items), and the YAML dash-list form for
-  `Security:`. Easy to get the wrong semantics from the wrong separator.
-- **Title vs description split.** A single-line comment ending in punctuation
-  becomes `title`/`summary`, not `description` — and the
-  `SingleLineCommentAsDescription` knob that opts out (already documented in
-  Shaping → Single-line comments; link to it).
+A "gotchas" page on the brittle edges of the annotation syntax — where a spec silently comes out wrong
+rather than erroring.
 
-Sources ready: `archive/doc-site-quirks.md`, the boundary memory's footgun notes, and
-the existing test-covered witnesses (`shaping/singleline`, `concepts/maps`,
-`concepts/security`). Bounded, high-value for authors → good early build.
+**State: pre-writing only.** Material gathered, no page written (verified: nothing on the site matches
+pitfall / gotcha / known-limitation). What is gathered:
 
-### (dropped) generic recipes / cookbook
-Considered and **dropped**: for a surface this small the concept tutorials
-already carry real end-to-end examples, so a cookbook would mostly duplicate
-them. The only defensible addition is *composition* (several annotations → one
-realistic resource), which overlaps the `putting-it-together` capstone. If a gap
-appears, add **one or two extra capstone siblings** for genuinely multi-concept
-scenarios — not a standalone cookbook section.
+- **Indentation in `swagger:operation` YAML bodies** — the body after `---` is YAML, and `gofmt`
+  re-indents doc comments with tabs, which `yaml.RemoveIndent` must expand before stripping.
+- **The prose-token footgun** — a line *starting* with `swagger:<name>` or a keyword (`name:`,
+  `example:`, `patternProperties:`) parses as that annotation even in prose, silently truncating a
+  description. Rule: keep such tokens mid-line or backticked.
+- **List separators and bracket forms** — comma-separated `enum`, the bracketed `[a,b,c]` form, security
+  AND (several keys in one requirement) vs OR (separate items).
+- **Title vs description split** — a single-line comment ending in punctuation becomes `title`, and the
+  `SingleLineCommentAsDescription` knob that opts out.
+
+Witnesses exist and are test-covered: `shaping/singleline`, `concepts/maps`, `concepts/security`.
+
+## W8c — "Usage with `go:generate`" 🟢
+
+Last of the three Getting-started siblings; the other two shipped. Cheapest item here.
+
+## W13 — OpenAPI 3.x coverage ⏸ on hold
+
+The documentation arm of the OAI v3 stream: both dialects and their differences (SimpleSchema
+disappears, nullable becomes native, `example` vs `examples`). **Resumes when that stream does** — gated
+on `internal-document-model.md`. Not startable, not lost.
 
 ---
 
-## C. Tooling & maintainability
+## ⛔ Dropped 2026-08-17
 
-### W15 — Render the grammar visually 🟡
-Make `maintainers/grammar` legible at a glance. Two tiers:
-- **Prettified EBNF (cheap):** the EBNF already lives in fenced blocks; Chroma
-  ships an `ebnf` lexer, so highlighted/prettified EBNF is nearly free — tag the
-  fences (and confirm the lexer renders our ISO-14977 dialect acceptably).
-- **Railroad / syntax diagrams (nicer, more effort):** generate railroad SVGs
-  from the productions at build time and embed them. NB mermaid has **no** native
-  railroad support (flowcharts only), so this needs a railroad-diagram generator,
-  not mermaid. **⏸ Parked (2026-06-23)** — low ROI vs the EBNF tier; only the
-  prettified-EBNF tier (W15a) is in the active next wave.
+- **W19 — "try it" tab on tutorial examples.** Technically too constraining. The feasibility work
+  (46 files / 44 packages, imports almost all stdlib, 8.4 MB gzipped artifact on first activation)
+  survives in the archive if anyone revisits; the answer is no.
+- **W9 — generate the reference tables from the grammar.** Too hard, too complex, probably not feasible.
+  Previously parked, now closed. **W14 was its cheap half** — see below.
 
-### W4 — Pipeline mermaid diagram 🟢
-A mermaid diagram on the Maintainers landing: scanner → parsers/grammar →
-builders → `*spec.Swagger`. Relearn supports mermaid out of the box; turns the
-prose architecture into a picture. (Mermaid fits here — a flowchart — even
-though it can't do the W15 railroad diagrams.)
+## ❓ Undisposed — need a call
 
-### W2 — Copy-to-clipboard on panes 🟢
-Verify Relearn's built-in clipboard affordance covers our `example`/`compare`
-panes; add it if the custom shortcodes bypass it.
+Five leftovers, one of them a correction. Listed so they get decided rather than forgotten.
 
-### W14 — Example-coverage check 🟢
-A test/CI step asserting every annotation in the grammar has at least one
-example package + a tutorial anchor — so new annotations can't ship
-undocumented. Natural extension of the golden harness.
-
-### W18 — MD051 false positives on same-page anchors 🟢 (noted 2026-08-01)
-The markdown linter (`markdown_lint`, rule MD051 "link-fragments") flags every
-same-page link to a **colon-bearing heading** as unresolved, because it derives
-the anchor differently from Hugo. Both known instances are correct as written and
-render fine on the site:
-
-```text
-model-definitions.md:37     [`swagger:strfmt`](#swaggerstrfmt)      ## swagger:strfmt
-routes-and-operations.md:36 [`swagger:parameters`](#swaggerparameters)  ## swagger:parameters
-```
-
-Since almost every annotation heading on the site carries a colon, this is the
-default shape for an intra-page cross-reference — and the pattern will spread as
-tutorials grow. **The cost is not the noise, it's the masking**: a genuinely
-broken fragment is indistinguishable from these, so nobody will trust the rule
-enough to act on it (exactly the failure mode W14 exists to prevent).
-
-Options, cheapest first: disable MD051 for `docs/doc-site/**` in whatever config
-the linter reads; teach the analyzer Hugo's anchor derivation (it is the
-go-fred-mcp markdown analyzer, ours to fix); or give the headings explicit IDs.
-The middle one is the only one that keeps the rule useful.
-
-Related: the same run reports `broken-relative-link` for every `{{% relref %}}`
-shortcode — same class of Hugo-unaware resolution, same masking problem, and
-much higher volume. Worth fixing together.
-
-### W9 — Generate the reference tables from the grammar 🔴 (⏸ parked 2026-06-23)
-**⏸ Parked as unrealistic** — large lexer/parser-interaction digression; W14
-(coverage gate) covers the cheap part of the same goal. Kept here for the record,
-not in the active Stream 7 next wave.
-
-The keyword / annotation reference is hand-maintained and **already drifted once**
-(the `swagger:enum` section was wrong, caught only by a real example). The dream
-is to emit those tables from the grammar's keyword tables so the reference can't
-lie. **But** the lexer/parser-interaction complexity makes this a large
-digression (cf. the highly-complex source-generated parts of the
-go-openapi/testify doc-site). Park it as the icing on the cake, well after the
-stream above; W14 (coverage gate) covers the cheap part of the same goal.
+1. ⚠️ **W7-residue — correcting an earlier claim of mine.** I marked W7 (document & security, prefer
+   overlay) ✅ DONE because the pages mention `InputSpec`/overlay several times. That check was wrong —
+   counting mentions is not checking framing. **The surface shipped** across
+   `tutorials/document-metadata.md` and `tutorials/security.md`, but W7's actual ask — *lead* with the
+   overlay recommendation, treat in-code annotations as the fallback — was not applied: overlay appears
+   at `document-metadata.md:59` as "Alternatively". Reframe the two pages, or drop the ask. Both are
+   defensible; leaving it recorded as done is not.
+2. **W3 — known limitations page.** Its gate (F1–F9) cleared, so it is deferred by choice now. If
+   written, draw on `quirks-open.md`'s small deliberate open set — Q45, Q48, Q23-edge, the
+   accepted-behaviours list — not the F-series.
+3. **W14 — example-coverage gate.** A CI step asserting every grammar annotation has an example package
+   and a tutorial anchor. It was W9's cheap half; with W9 dropped, this is either the surviving useful
+   piece of that idea or it goes the same way.
+4. **W2 — copy-to-clipboard on panes.** Verified open: neither `example.html` nor `compare.html` carries
+   a copy affordance, so the custom shortcodes do bypass Relearn's built-in. Small.
+5. **W18 — MD051 / relref linter false positives.** The linter flags every same-page link to a
+   colon-bearing heading (almost every annotation heading) and every `{{% relref %}}`. The cost is
+   masking — a genuinely broken fragment is indistinguishable from the noise. Cheapest fix is disabling
+   MD051 for `docs/doc-site/**`; the only fix that keeps the rule useful is teaching the analyzer Hugo's
+   anchor derivation, in the go-fred-mcp markdown analyzer, which is ours.
 
 ---
 
-## D. Lifecycle
-
-### W13 — OpenAPI 3.x coverage 🔴 (tracks v2 vision)
-When OAS 3.x output lands (`project_v2_vision`), the doc-site covers both
-dialects and the differences (SimpleSchema disappears, nullable becomes native,
-`example` vs `examples`, etc.). Large, downstream of the product work.
-
-### (out of scope) Versioned docs
-Per-release versioned docs is an **org-wide** project with CI & release-process
-ramifications — tracked as its own stream, not part of this doc-site wishlist.
-
----
-
-## Suggested first wave (when doc-site work resumes)
-1. **W16** About / why-codescan explainer (bounded, source ready) + **W1**
-   OpenAPI widget on the capstone (highest visible payoff).
-2. **W15 (prettified EBNF tier)** + **W4** + **W2** — cheap, high-legibility polish.
-3. **W6** discriminator / advanced modeling, **W7** meta+security (overlay-first),
-   **W17** syntax pitfalls (bounded, source-ready author-facing gotchas).
-4. **W14** example-coverage gate.
-Defer **W3** until the F1–F9 fix lands. Marquee bets **W11 → W10** ride the
-genspec-tui/WASM stream. **W9** and the W15 railroad tier are later icing.
+Companions: `archive/doc-site-quirks.md` (scanner bugs the docs revealed),
+`archive/doc-site-reference.md` (the original build plan),
+`archive/doc-site-backlog-alignment.md` (the go-swagger-issue alignment audit, complete).
