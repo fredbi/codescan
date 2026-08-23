@@ -1,0 +1,183 @@
+# codescan release pipeline
+#
+# This pipeline produces:
+# a github release with the following content:
+#
+# * signed binaries (linux, windows, macos)
+# * ~signed packages for linux distros~
+# * signed source archive
+# * signed checksum files
+# * ~released documentation site~
+# * announcement message on the discord channel
+#
+# The following artifacts are produced outside goreleaser:
+#
+# * discarded: release notes & changelog
+# * discarded: ~sboms for binary and source archives~ (doesn't meet quality expectations)
+#
+# Check the documentation at https://goreleaser.com
+
+version: 2
+project_name: codescan
+
+env: # these env are useful to allow usage from a fork
+  - GIT_OWNER={{ if index .Env "GITHUB_REPOSITORY_OWNER" }}{{ .Env.GITHUB_REPOSITORY_OWNER }}{{ else }}codescan{{ end }}
+  - GIT_REPO=codescan
+  - MODULE_NAME=github.com/go-openapi/codescan
+  - GITHUB_TOKEN={{ .Env.GITHUB_TOKEN }}  # being explicit about this requirement, fails if not defined
+  - NFPM_PASSPHRASE={{ .Env.GPG_PASSPHRASE }}  # being explicit about this requirement
+  - GPG_NFPM_KEY_FILE={{ .Env.GPG_NFPM_KEY_FILE }}  # being explicit about this requirement
+  - GPG_FINGERPRINT={{ .Env.GPG_FINGERPRINT }}  # being explicit about this requirement
+
+builds:
+  - id: genspec
+    main: ./cmd/genspec
+    binary: genspec
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - >-
+        -s -w
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+  - id: genspec-tui
+    main: ./cmd/genspec-tui
+    binary: genspec-tui
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - >-
+        -s -w
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+gomod:
+  proxy: false
+  env:
+  - GOPRIVATE=github.com/go-openapi
+
+upx:
+  - enabled: true
+    compress: best
+    lzma: false
+    brute: false
+    goos: [linux]
+    goarch: [arm,arm64,amd64]
+  - enabled: true
+    compress: best
+    lzma: false
+    brute: false
+    goos: [windows]
+    goarch: [amd64,arm64]
+  - enabled: false
+    compress: best
+    lzma: false
+    brute: false
+    goos: [darwin]
+    goarch: [amd64]
+
+archives:
+  -
+    id: release-binary-bundles
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{- .ID }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- with .Arm }}v{{ . }}{{ end }}
+    strip_binary_directory: true
+    builds_info:
+      owner: root
+      group: root
+      mtime: "{{ .CommitDate }}"
+      mode: 0644
+    files:
+      - LICENSE
+      - NOTICE
+    strip_binary_directory: true
+    builds_info:
+      owner: root
+      group: root
+      mtime: "{{ .CommitDate }}"
+      mode: 0644
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}-source"
+  format: "tar.gz"
+  prefix_template: "{{ .ProjectName }}-{{ .Version }}/"
+
+checksum:
+  name_template: "{{ .ProjectName }}-checksums.txt"
+  algorithm: sha256
+  split: false
+
+changelog:
+  # Do not auto-generate changelog — release notes are provided by git-cliff via --release-notes.
+  # NOTE: changelog.disable: true would also suppress --release-notes, so we filter instead.
+  filters:
+    exclude:
+      - ".*"
+
+signs:
+  - id: sign-artifacts
+    cmd: gpg
+    args:
+    - '--detach-sign'
+    - '--local-user'
+    - '{{ .Env.GPG_FINGERPRINT }}'
+    - '--output'
+    - '${signature}'
+    artifacts: all
+    stdin: "{{ .Env.GPG_PASSPHRASE }}"
+    output: true
+
+release:
+  github:
+    owner: '{{ .Env.GIT_OWNER }}'
+    name: '{{ .Env.GIT_REPO }}'
+
+  replace_existing_draft: true
+  make_latest: true
+  mode: replace
+  header: |
+    {{ .ProjectName }} release {{ .Version }}
+
+    ---
+
+    Released on {{ .Now.Format "2006 Jan 02" }}
+
+  footer: |
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+announce:
+  discord:
+    enabled: true
+    message_template: |
+      Released go-openapi/codescan tools: genspec & genspec-tui {{ .Tag }}
+      - [CI Workflow](https://github.com/go-openapi/codescan/actions/workflows/release.yaml)
+      - [Release notes](https://github.com/go-openapi/codescan/releases/tag/{{ .Tag }})
+      - [Compare with previous version](https://github.com/go-openapi/codescan/compare/{{ .PreviousTag }}...{{ .Tag }})
+    author: go-swagger & go-openapi maintainers
